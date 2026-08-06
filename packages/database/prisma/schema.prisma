@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DocumentType {
+  REPORT
+  PRESCRIPTION
+}
+
+enum ProcessingStatus {
+  NOT_APPLICABLE
+  UPLOADED
+  QUEUED
+  PROCESSING
+  NEEDS_REVIEW
+  VERIFIED
+  FAILED
+}
+
+enum VerificationStatus {
+  NOT_APPLICABLE
+  PENDING
+  VERIFIED
+}
+
+enum ReportCategory {
+  HEMATOLOGY
+  BIOCHEMISTRY
+  IMMUNOLOGY
+  MICROBIOLOGY
+  ENDOCRINOLOGY
+  CARDIOLOGY
+  RADIOLOGY
+  PATHOLOGY
+  URINALYSIS
+  OTHER
+}
+
+enum ExtractionStatus {
+  DRAFT
+  VERIFIED
+}
+
+model Patient {
+  id         String            @id @default(uuid()) @db.Uuid
+  authUserId String            @unique @map("auth_user_id") @db.Uuid
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  profile    PatientProfile?
+  documents  MedicalDocument[]
+
+  @@map("patients")
+}
+
+model PatientProfile {
+  id                       String   @id @default(uuid()) @db.Uuid
+  patientId                String   @unique @map("patient_id") @db.Uuid
+  fullName                 String   @map("full_name") @db.VarChar(120)
+  dateOfBirth              DateTime? @map("date_of_birth") @db.Date
+  gender                   String?  @db.VarChar(40)
+  bloodGroup               String?  @map("blood_group") @db.VarChar(3)
+  allergies                String[] @default([])
+  chronicConditions        String[] @default([]) @map("chronic_conditions")
+  emergencyContactName     String?  @map("emergency_contact_name") @db.VarChar(120)
+  emergencyContactPhone    String?  @map("emergency_contact_phone") @db.VarChar(40)
+  emergencyContactRelation String?  @map("emergency_contact_relation") @db.VarChar(60)
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  patient                  Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_profiles")
+}
+
+model MedicalDocument {
+  id                   String             @id @default(uuid()) @db.Uuid
+  patientId            String             @map("patient_id") @db.Uuid
+  documentType         DocumentType       @map("document_type")
+  originalFilename     String             @map("original_filename") @db.VarChar(255)
+  mimeType             String             @map("mime_type") @db.VarChar(100)
+  fileSize             Int                @map("file_size")
+  storagePath          String             @unique @map("storage_path") @db.VarChar(600)
+  checksumSha256       String             @map("checksum_sha256") @db.Char(64)
+  documentVersion      Int                @default(1) @map("document_version")
+  documentDate         DateTime?          @map("document_date") @db.Date
+  hospitalName         String?            @map("hospital_name") @db.VarChar(180)
+  testName             String?            @map("test_name") @db.VarChar(180)
+  normalizedTestName   String?            @map("normalized_test_name") @db.VarChar(180)
+  category             ReportCategory?
+  processingStatus     ProcessingStatus   @map("processing_status")
+  verificationStatus   VerificationStatus @map("verification_status")
+  processingAttempts   Int                @default(0) @map("processing_attempts")
+  processingStartedAt  DateTime?          @map("processing_started_at")
+  failureCode          String?            @map("failure_code") @db.VarChar(80)
+  uploadedAt           DateTime           @default(now()) @map("uploaded_at")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  patient              Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  extraction           ReportExtraction?
+
+  @@index([patientId, createdAt(sort: Desc)])
+  @@index([patientId, documentType, processingStatus])
+  @@index([patientId, verificationStatus, normalizedTestName, documentDate(sort: Desc), createdAt(sort: Desc)])
+  @@map("medical_documents")
+}
+
+model ReportExtraction {
+  id                    String              @id @default(uuid()) @db.Uuid
+  documentId            String              @unique @map("document_id") @db.Uuid
+  documentVersion       Int                 @map("document_version")
+  status                ExtractionStatus    @default(DRAFT)
+  documentReportType    String              @map("document_report_type") @db.VarChar(120)
+  extractedTestName     String              @map("extracted_test_name") @db.VarChar(180)
+  normalizedTestName    String              @map("normalized_test_name") @db.VarChar(180)
+  extractedReportDate   DateTime?           @map("extracted_report_date") @db.Date
+  extractedHospitalName String?              @map("extracted_hospital_name") @db.VarChar(180)
+  extractedCategory     ReportCategory      @map("extracted_category")
+  patientNameOnReport   String?              @map("patient_name_on_report") @db.VarChar(120)
+  provider              String              @db.VarChar(40)
+  model                 String              @db.VarChar(120)
+  schemaVersion         String              @map("schema_version") @db.VarChar(40)
+  rawOutput             Json                @map("raw_output")
+  analyzedAt            DateTime            @map("analyzed_at")
+  verifiedAt            DateTime?           @map("verified_at")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+  document              MedicalDocument     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  measurements          ReportMeasurement[]
+
+  @@unique([documentId, documentVersion])
+  @@map("report_extractions")
+}
+
+model ReportMeasurement {
+  id                       String           @id @default(uuid()) @db.Uuid
+  extractionId             String           @map("extraction_id") @db.Uuid
+  sortOrder                Int              @map("sort_order")
+  name                     String           @db.VarChar(180)
+  normalizedName           String           @map("normalized_name") @db.VarChar(180)
+  textValue                String?          @map("text_value") @db.VarChar(240)
+  numericValue             Float?           @map("numeric_value")
+  unit                     String?          @db.VarChar(80)
+  referenceRange           String?          @map("reference_range") @db.VarChar(160)
+  sourceFlag               String?          @map("source_flag") @db.VarChar(40)
+  verifiedName             String?          @map("verified_name") @db.VarChar(180)
+  verifiedNormalizedName   String?          @map("verified_normalized_name") @db.VarChar(180)
+  verifiedTextValue        String?          @map("verified_text_value") @db.VarChar(240)
+  verifiedNumericValue     Float?           @map("verified_numeric_value")
+  verifiedUnit             String?          @map("verified_unit") @db.VarChar(80)
+  verifiedReferenceRange   String?          @map("verified_reference_range") @db.VarChar(160)
+  verifiedSourceFlag       String?          @map("verified_source_flag") @db.VarChar(40)
+  patientCorrected         Boolean          @default(false) @map("patient_corrected")
+  createdAt                DateTime         @default(now()) @map("created_at")
+  updatedAt                DateTime         @updatedAt @map("updated_at")
+  extraction               ReportExtraction @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+
+  @@unique([extractionId, sortOrder])
+  @@map("report_measurements")
+}

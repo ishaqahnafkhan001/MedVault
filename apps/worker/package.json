@@ -1,0 +1,31 @@
+{
+  "name": "@medvault/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude 'dist/**'"
+  },
+  "dependencies": {
+    "@medvault/ai": "workspace:*",
+    "@medvault/database": "workspace:*",
+    "@medvault/medical": "workspace:*",
+    "@medvault/shared": "workspace:*",
+    "@sentry/node": "10.69.0",
+    "@supabase/supabase-js": "2.112.2",
+    "bullmq": "6.0.8",
+    "dotenv": "17.3.1",
+    "ioredis": "6.0.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "4.21.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

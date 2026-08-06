@@ -1,0 +1,38 @@
+{
+  "name": "medvault",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "prebuild": "pnpm db:generate",
+    "build": "turbo build",
+    "prelint": "pnpm db:generate",
+    "lint": "turbo lint",
+    "pretypecheck": "pnpm db:generate",
+    "typecheck": "turbo typecheck",
+    "pretest": "pnpm db:generate",
+    "test": "turbo test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @medvault/database generate",
+    "db:migrate": "pnpm --filter @medvault/database migrate",
+    "db:deploy": "pnpm --filter @medvault/database migrate:deploy",
+    "db:validate": "pnpm --filter @medvault/database validate",
+    "db:studio": "pnpm --filter @medvault/database studio"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "25.5.0",
+    "eslint": "10.8.0",
+    "globals": "17.4.0",
+    "prettier": "3.9.6",
+    "turbo": "2.10.8",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.66.0",
+    "vitest": "4.1.10"
+  }
+}

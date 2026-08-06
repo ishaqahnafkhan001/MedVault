@@ -1,0 +1,21 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  "@google/genai": true
+  "@prisma/engines": true
+  "@sentry/cli": true
+  esbuild: true
+  msgpackr-extract: true
+  prisma: true
+  protobufjs: true
+
+minimumReleaseAgeExclude:
+  - "@google/genai@2.16.0"
+  - "@supabase/auth-js@2.112.2"
+  - "@supabase/functions-js@2.112.2"
+  - "@supabase/postgrest-js@2.112.2"
+  - "@supabase/realtime-js@2.112.2"
+  - "@supabase/storage-js@2.112.2"
+  - "@supabase/supabase-js@2.112.2"

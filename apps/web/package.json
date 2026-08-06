@@ -1,0 +1,31 @@
+{
+  "name": "@medvault/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint app components lib proxy.ts instrumentation-client.ts sentry.*.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests --exclude 'dist/**'"
+  },
+  "dependencies": {
+    "@medvault/shared": "workspace:*",
+    "@sentry/nextjs": "10.69.0",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.2",
+    "@tanstack/react-query": "5.101.4",
+    "lucide-react": "0.577.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  }
+}

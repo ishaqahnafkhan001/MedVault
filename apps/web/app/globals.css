@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --ink: #162522;
+  --muted: #64736f;
+  --teal: #176c5b;
+  --teal-dark: #0e4f43;
+  --mint: #e4f1ed;
+  --cream: #f7f8f3;
+  --line: #dce5e1;
+  --card: #ffffff;
+  --amber: #aa6912;
+  --red: #a63d40;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--cream);
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--cream);
+  font-family: var(--font-body), sans-serif;
+}
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.025em;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 3px solid rgba(23, 108, 91, 0.25);
+  outline-offset: 2px;
+}
+
+.surface {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 42px rgba(37, 55, 50, 0.06);
+}
+.field {
+  width: 100%;
+  border: 1px solid #ccd9d4;
+  border-radius: 0.8rem;
+  background: #fff;
+  padding: 0.72rem 0.85rem;
+  color: var(--ink);
+  transition:
+    border 0.15s,
+    box-shadow 0.15s;
+}
+.field:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(23, 108, 91, 0.1);
+  outline: none;
+}
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #40514c;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: var(--teal);
+  color: white;
+  padding: 0.72rem 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.button-primary:hover {
+  background: var(--teal-dark);
+}
+.button-primary:active {
+  transform: translateY(1px);
+}
+.button-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--ink);
+  padding: 0.68rem 0.95rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.eyebrow {
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.page-title {
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+.muted {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
