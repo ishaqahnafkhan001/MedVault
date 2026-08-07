@@ -18,6 +18,13 @@ const patientB = "20000000-0000-4000-8000-000000000002";
 const documentA = "30000000-0000-4000-8000-000000000003";
 
 describe("authenticated API", () => {
+  it("serves a browser-friendly backend confirmation page", async () => {
+    const response = await request(testApp()).get("/");
+    expect(response.status).toBe(200);
+    expect(response.headers["content-type"]).toContain("text/html");
+    expect(response.text).toContain("MedVault API is running");
+  });
+
   it("rejects unauthenticated private requests", async () => {
     const response = await request(testApp()).get("/v1/documents");
     expect(response.status).toBe(401);

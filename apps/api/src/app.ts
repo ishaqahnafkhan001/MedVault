@@ -53,6 +53,23 @@ export function createApp(options: CreateAppOptions) {
   );
   app.use(express.json({ limit: "1mb" }));
 
+  app.get("/", (_request, response) => {
+    response.type("html").send(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MedVault API</title>
+  </head>
+  <body>
+    <main>
+      <h1>MedVault API is running</h1>
+      <p>The backend is healthy and ready to receive requests.</p>
+      <p><a href="/health">View the JSON health check</a></p>
+    </main>
+  </body>
+</html>`);
+  });
   app.get("/health", (_request, response) => response.json({ status: "ok" }));
   app.use("/v1", authenticate(options.authVerifier));
 

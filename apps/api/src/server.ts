@@ -36,8 +36,10 @@ const app = createApp({
   signedUrlTtlSeconds: config.SIGNED_URL_TTL_SECONDS,
 });
 
+app.set("trust proxy", 1);
+
 const server = app.listen(config.API_PORT, () => {
-  process.stdout.write(`MedVault API listening on port ${String(config.API_PORT)}\n`);
+  process.stdout.write(`MedVault API is running at http://localhost:${String(config.API_PORT)}\n`);
 });
 
 async function shutdown(): Promise<void> {
