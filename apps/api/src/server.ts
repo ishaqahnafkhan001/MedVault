@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { getPrismaClient } from "@medvault/database";
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
@@ -7,6 +9,12 @@ import { PrismaAppService } from "./services/prisma-service.js";
 import { BullMqReportQueue } from "./services/queue.js";
 import { SupabasePrivateStorage } from "./services/storage.js";
 import { initializeSentry } from "./sentry.js";
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const localEnvironment = resolve(repositoryRoot, ".env.local");
+const rootEnvironment = resolve(repositoryRoot, ".env");
+if (existsSync(localEnvironment)) process.loadEnvFile(localEnvironment);
+if (existsSync(rootEnvironment)) process.loadEnvFile(rootEnvironment);
 
 const config = loadConfig();
 initializeSentry(config.SENTRY_DSN, config.SENTRY_ENVIRONMENT);

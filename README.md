@@ -20,7 +20,38 @@ Node.js 22+, pnpm 11+, a Supabase project, PostgreSQL, and Redis. Gemini and Sen
 ```bash
 pnpm install
 cp .env.example .env
+```
+
+The root `.env.local` and `.env` files are loaded automatically by Prisma, the API, the worker, and Next.js. Values in the ignored `.env.local` take priority, which is useful for local database overrides.
+
+### PostgreSQL and Redis
+
+Choose one local-infrastructure option:
+
+**Docker:**
+
+```bash
 docker compose up -d postgres redis
+```
+
+**Homebrew on macOS:**
+
+```bash
+brew install postgresql@17 redis
+brew services start postgresql@17
+brew services start redis
+createdb medvault
+```
+
+When using Homebrew, update `DATABASE_URL` in `.env` for your local PostgreSQL username. You can instead use your Supabase PostgreSQL connection string for `DATABASE_URL` and a hosted Redis provider for `REDIS_URL`; Docker is not required.
+
+Supabase direct database hosts can be IPv6-only. On an IPv4-only network, use the Supavisor **session pooler** connection string from the Supabase dashboard, or place a local PostgreSQL override in `.env.local`.
+
+Database URLs are canonicalized before use, but passwords copied into URLs should still percent-encode reserved characters such as `@`, `#`, `/`, and `?`.
+
+After PostgreSQL is available and `DATABASE_URL` is correct:
+
+```bash
 pnpm db:generate
 pnpm db:migrate
 ```

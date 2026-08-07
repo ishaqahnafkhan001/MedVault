@@ -9,11 +9,11 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
     "lint": "eslint src --ignore-pattern generated",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests --exclude 'dist/**'",
     "generate": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.json",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "validate": "prisma validate",

@@ -9,7 +9,8 @@ export function createPrismaClient(databaseUrl = process.env.DATABASE_URL): Pris
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is required");
   }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
+  const connectionString = new URL(databaseUrl).toString();
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 }
 
 export function getPrismaClient(): PrismaClient {
