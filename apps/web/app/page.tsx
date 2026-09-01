@@ -25,7 +25,7 @@ export default function HomePage() {
       </nav>
       <section className="relative mx-auto grid min-h-[calc(100vh-88px)] max-w-7xl items-center gap-14 px-6 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-10">
         <div className="relative z-10 max-w-2xl">
-          <p className="eyebrow mb-5">Patient-owned records</p>
+          <p className="eyebrow mb-5">Patient-controlled records</p>
           <h1 className="font-display text-5xl font-extrabold leading-[1.04] text-[#132d28] sm:text-6xl lg:text-7xl">
             Your medical history,
             <br />
@@ -53,7 +53,7 @@ export default function HomePage() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-[#75827e]">
-                  Your health record
+                  Illustrative dashboard
                 </p>
                 <h2 className="mt-1 text-2xl font-extrabold">Latest reports</h2>
               </div>

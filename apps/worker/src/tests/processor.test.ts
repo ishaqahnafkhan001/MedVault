@@ -11,6 +11,7 @@ import {
   type ClaimedReport,
   type ReportProcessorRepository,
 } from "../processor.js";
+import { isExpectedReportStoragePath } from "../prisma-repository.js";
 
 const extraction = {
   documentReportType: "Laboratory report",
@@ -97,12 +98,46 @@ describe("report processor", () => {
     expect(repository.persisted).toEqual([]);
     expect(repository.failureCodes).toEqual(["ANALYSIS_FAILED"]);
   });
+
+  it("does not report success when the document version changed before persistence", async () => {
+    const repository = new FakeRepository(report());
+    repository.persistSucceeds = false;
+    await expect(
+      processorWith(repository, new MockReportExtractionAdapter(extraction)).process(job(), {
+        number: 1,
+        maximum: 4,
+      }),
+    ).resolves.toBe("stale");
+  });
+
+  it("allows only one concurrent worker claim for a document version", async () => {
+    const repository = new SingleClaimRepository(report());
+    const processor = new ReportProcessor(
+      repository,
+      { download: () => Promise.resolve(new Uint8Array([1])) },
+      new MockReportExtractionAdapter(extraction),
+    );
+    const results = await Promise.all([
+      processor.process(job(), { number: 1, maximum: 4 }),
+      processor.process(job(), { number: 1, maximum: 4 }),
+    ]);
+    expect(results.sort()).toEqual(["not-found", "processed"]);
+    expect(repository.persisted).toBe(1);
+  });
+
+  it("accepts only the authenticated-user/document storage namespace", () => {
+    expect(isExpectedReportStoragePath("user-a", "doc-a", "user-a/doc-a/report.pdf")).toBe(true);
+    expect(isExpectedReportStoragePath("user-a", "doc-a", "user-b/doc-a/report.pdf")).toBe(false);
+    expect(isExpectedReportStoragePath("user-a", "doc-a", "user-a/doc-b/report.pdf")).toBe(false);
+    expect(isExpectedReportStoragePath("user-a", "doc-a", "user-a\\doc-a\\report.pdf")).toBe(false);
+  });
 });
 
 class FakeRepository implements ReportProcessorRepository {
   persisted: ExtractionResult[] = [];
   retryCodes: string[] = [];
   failureCodes: string[] = [];
+  persistSucceeds = true;
 
   constructor(public claimed: ClaimedReport | "complete" | null) {}
   claim() {
@@ -110,14 +145,41 @@ class FakeRepository implements ReportProcessorRepository {
   }
   persist(_document: ClaimedReport, result: ExtractionResult) {
     this.persisted.push(result);
-    return Promise.resolve();
+    return Promise.resolve(this.persistSucceeds);
   }
-  markRetry(_id: string, safeCode: string) {
+  markRetry(_document: ClaimedReport, safeCode: string) {
     this.retryCodes.push(safeCode);
     return Promise.resolve();
   }
-  markFailed(_id: string, safeCode: string) {
+  markFailed(_document: ClaimedReport, safeCode: string) {
     this.failureCodes.push(safeCode);
+    return Promise.resolve();
+  }
+}
+
+class SingleClaimRepository implements ReportProcessorRepository {
+  persisted = 0;
+  private available = true;
+
+  constructor(private readonly report: ClaimedReport) {}
+
+  async claim(): Promise<ClaimedReport | null> {
+    await Promise.resolve();
+    if (!this.available) return null;
+    this.available = false;
+    return this.report;
+  }
+
+  persist(): Promise<boolean> {
+    this.persisted += 1;
+    return Promise.resolve(true);
+  }
+
+  markRetry(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  markFailed(): Promise<void> {
     return Promise.resolve();
   }
 }

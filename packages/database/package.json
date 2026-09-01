@@ -9,6 +9,7 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "lint": "eslint src --ignore-pattern generated",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests --exclude 'dist/**'",

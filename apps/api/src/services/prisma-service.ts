@@ -15,14 +15,26 @@ import { AppError, notFound } from "../errors.js";
 import type { AppService, UploadedDocumentFile } from "../types.js";
 import type { ReportQueue } from "./queue.js";
 import type { PrivateStorage } from "./storage.js";
+import {
+  DocumentDeletionCoordinator,
+  PrismaDocumentDeletionRepository,
+} from "./document-deletion.js";
 
 export class PrismaAppService implements AppService {
+  private readonly deletion: DocumentDeletionCoordinator;
+
   constructor(
     private readonly prisma: PrismaClient,
     private readonly storage: PrivateStorage,
     private readonly reportQueue: ReportQueue,
     private readonly signedUrlTtlSeconds: number,
-  ) {}
+  ) {
+    this.deletion = new DocumentDeletionCoordinator(
+      new PrismaDocumentDeletionRepository(prisma),
+      storage,
+      reportQueue,
+    );
+  }
 
   private async patientId(authUserId: string): Promise<string> {
     const patient = await this.prisma.patient.upsert({
@@ -133,6 +145,10 @@ export class PrismaAppService implements AppService {
     });
     if (!document) throw notFound();
     return this.storage.createSignedUrl(document.storagePath, this.signedUrlTtlSeconds);
+  }
+
+  deleteDocument(authUserId: string, documentId: string): Promise<void> {
+    return this.deletion.delete(authUserId, documentId);
   }
 
   async listReports(
@@ -270,7 +286,7 @@ export class PrismaAppService implements AppService {
       where: { id: documentId, patientId, documentType: "REPORT", processingStatus: "FAILED" },
     });
     if (!report) throw notFound();
-    await this.reportQueue.enqueue("REPORT", {
+    await this.reportQueue.ensureQueued({
       documentId: report.id,
       documentVersion: report.documentVersion,
     });

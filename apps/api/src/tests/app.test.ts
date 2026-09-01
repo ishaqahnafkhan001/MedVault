@@ -51,6 +51,28 @@ describe("authenticated API", () => {
     expect(response.status).toBe(404);
   });
 
+  it("prevents cross-patient signed URLs, deletion, retry, and verification", async () => {
+    const app = testApp();
+    const authorization = { Authorization: "Bearer token-b" };
+    const [file, deletion, retry, verificationResponse] = await Promise.all([
+      request(app).get(`/v1/documents/${documentA}/file`).set(authorization),
+      request(app).delete(`/v1/documents/${documentA}`).set(authorization),
+      request(app).post(`/v1/reports/${documentA}/retry`).set(authorization),
+      request(app).put(`/v1/reports/${documentA}/verify`).set(authorization).send(verification()),
+    ]);
+    expect([file.status, deletion.status, retry.status, verificationResponse.status]).toEqual([
+      404, 404, 404, 404,
+    ]);
+  });
+
+  it("does not apply the private API rate limit to health checks", async () => {
+    const app = testApp(10_000, new FakeService(), 1);
+    const first = await request(app).get("/health");
+    const second = await request(app).get("/health");
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+  });
+
   it("rejects an invalid MIME even when its filename says PDF", async () => {
     const response = await request(testApp())
       .post("/v1/documents")
@@ -121,7 +143,7 @@ describe("authenticated API", () => {
   });
 });
 
-function testApp(maxUploadBytes = 10_000, service = new FakeService()) {
+function testApp(maxUploadBytes = 10_000, service = new FakeService(), rateLimitMax = 10_000) {
   const verifier: AuthVerifier = {
     verify: (token) =>
       Promise.resolve(
@@ -133,7 +155,7 @@ function testApp(maxUploadBytes = 10_000, service = new FakeService()) {
     service,
     webOrigin: "http://localhost:3000",
     maxUploadBytes,
-    rateLimitMax: 10_000,
+    rateLimitMax,
   });
 }
 
@@ -189,6 +211,11 @@ class FakeService implements AppService {
   getFileUrl(authUserId: string, id: string) {
     return authUserId === patientA && id === documentA
       ? Promise.resolve("https://private.example/signed")
+      : Promise.reject(notFound());
+  }
+  deleteDocument(authUserId: string, id: string) {
+    return authUserId === patientA && id === documentA
+      ? Promise.resolve()
       : Promise.reject(notFound());
   }
   listReports(authUserId: string, query: DocumentListQuery) {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export * from "./environment.js";
+
 export const documentTypes = ["REPORT", "PRESCRIPTION"] as const;
 export const processingStatuses = [
   "NOT_APPLICABLE",

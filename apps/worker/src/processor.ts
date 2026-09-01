@@ -16,9 +16,9 @@ export interface ClaimedReport {
 
 export interface ReportProcessorRepository {
   claim(documentId: string, documentVersion: number): Promise<ClaimedReport | "complete" | null>;
-  persist(document: ClaimedReport, result: ExtractionResult): Promise<void>;
-  markRetry(documentId: string, safeCode: string): Promise<void>;
-  markFailed(documentId: string, safeCode: string): Promise<void>;
+  persist(document: ClaimedReport, result: ExtractionResult): Promise<boolean>;
+  markRetry(document: ClaimedReport, safeCode: string): Promise<void>;
+  markFailed(document: ClaimedReport, safeCode: string): Promise<void>;
 }
 
 export interface ReportFileStorage {
@@ -47,12 +47,12 @@ export class ReportProcessor {
   async process(
     data: { documentId: string; documentVersion: number },
     attempt: ProcessingAttempt,
-  ): Promise<"processed" | "already-complete" | "not-found"> {
+  ): Promise<"processed" | "already-complete" | "not-found" | "stale"> {
     const document = await this.repository.claim(data.documentId, data.documentVersion);
     if (document === "complete") return "already-complete";
     if (!document) return "not-found";
     if (document.documentType !== "REPORT") {
-      await this.repository.markFailed(document.id, "PRESCRIPTION_AI_FORBIDDEN");
+      await this.repository.markFailed(document, "PRESCRIPTION_AI_FORBIDDEN");
       throw new PermanentProcessingError("PRESCRIPTION_AI_FORBIDDEN");
     }
 
@@ -78,8 +78,7 @@ export class ReportProcessor {
           })),
         },
       };
-      await this.repository.persist(document, normalizedResult);
-      return "processed";
+      return (await this.repository.persist(document, normalizedResult)) ? "processed" : "stale";
     } catch (error) {
       const permanent =
         error instanceof PermanentProcessingError ||
@@ -92,10 +91,10 @@ export class ReportProcessor {
             ? error.safeCode
             : "ANALYSIS_FAILED";
       if (permanent || finalAttempt) {
-        await this.repository.markFailed(document.id, safeCode);
+        await this.repository.markFailed(document, safeCode);
         throw new PermanentProcessingError(safeCode);
       }
-      await this.repository.markRetry(document.id, safeCode);
+      await this.repository.markRetry(document, safeCode);
       throw error;
     }
   }

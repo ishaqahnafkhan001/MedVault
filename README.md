@@ -1,12 +1,12 @@
 # MedVault
 
-MedVault is a patient-owned medical record platform. Phase 1 lets a patient authenticate, maintain a profile, privately upload reports and prescriptions, review structured report data extracted by Gemini, and browse a searchable verified history. Prescriptions are never sent to AI.
+MedVault is a patient-controlled personal medical-record platform. The MVP lets a patient authenticate, maintain a profile, privately upload reports and prescriptions, review structured report facts extracted by Gemini, and browse a searchable verified history. Documents classified as prescriptions are excluded from AI; the current classification is patient-selected metadata and does not independently detect mislabeled content.
 
 ## Stack
 
 - Next.js App Router, React, Tailwind CSS, TanStack Query
 - Express, Zod, Supabase Auth and private Supabase Storage
-- PostgreSQL/Supabase with Prisma
+- PostgreSQL with Prisma (local development database currently configured; hosted PostgreSQL is the production target)
 - BullMQ and Redis worker
 - Gemini structured extraction behind a mockable adapter
 - Vitest and Supertest
@@ -92,7 +92,7 @@ packages/ai    Gemini adapter and extraction contract
 packages/database  Prisma schema and client
 packages/medical   Deterministic normalization and categorization
 packages/shared    Shared validation schemas and DTOs
-docs           Architecture and Phase 1 delivery notes
+docs           Architecture and MVP delivery notes
 ```
 
-See [architecture](docs/architecture.md) and the [Phase 1 plan](docs/phase-1-plan.md).
+See [architecture](docs/architecture.md) and the [MVP implementation plan](docs/phase-1-plan.md).

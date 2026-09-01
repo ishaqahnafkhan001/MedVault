@@ -3,6 +3,7 @@ node_modules/
 dist/
 coverage/
 .turbo/
+backups/
 .env
 .env.local
 .env.*.local

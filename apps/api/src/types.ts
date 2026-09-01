@@ -34,6 +34,7 @@ export interface AppService {
   listDocuments(authUserId: string, query: DocumentListQuery): Promise<PaginatedDto<DocumentDto>>;
   getDocument(authUserId: string, documentId: string): Promise<DocumentDto>;
   getFileUrl(authUserId: string, documentId: string): Promise<string>;
+  deleteDocument(authUserId: string, documentId: string): Promise<void>;
   listReports(authUserId: string, query: DocumentListQuery): Promise<PaginatedDto<DocumentDto>>;
   latestReports(authUserId: string): Promise<DocumentDto[]>;
   getReport(authUserId: string, documentId: string): Promise<ReportDetailDto>;

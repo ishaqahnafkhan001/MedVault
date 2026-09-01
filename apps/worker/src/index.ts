@@ -4,11 +4,12 @@ import { fileURLToPath } from "node:url";
 import * as Sentry from "@sentry/node";
 import { GeminiReportExtractionAdapter } from "@medvault/ai";
 import { getPrismaClient } from "@medvault/database";
+import { describeEnvironmentTopology, formatEnvironmentTopology } from "@medvault/shared";
 import { UnrecoverableError, Worker, type Job } from "bullmq";
-import IORedis from "ioredis";
-import { z } from "zod";
+import { loadWorkerConfig } from "./config.js";
 import { PermanentProcessingError, ReportProcessor } from "./processor.js";
 import { PrismaReportProcessorRepository } from "./prisma-repository.js";
+import { closeWorkerRedisConnection, createWorkerRedisConnection } from "./redis-connection.js";
 import { initializeWorkerSentry } from "./sentry.js";
 import { SupabaseReportFileStorage } from "./storage.js";
 
@@ -18,20 +19,15 @@ const rootEnvironment = resolve(repositoryRoot, ".env");
 if (existsSync(localEnvironment)) process.loadEnvFile(localEnvironment);
 if (existsSync(rootEnvironment)) process.loadEnvFile(rootEnvironment);
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  SUPABASE_STORAGE_BUCKET: z.string().default("medical-documents"),
-  GEMINI_API_KEY: z.string().default(""),
-  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
-  REPORT_QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(2),
-  SENTRY_DSN: z.string().optional(),
-  SENTRY_ENVIRONMENT: z.string().default("development"),
+const environment = loadWorkerConfig();
+const topology = describeEnvironmentTopology({
+  databaseUrl: environment.DATABASE_URL,
+  redisUrl: environment.REDIS_URL,
+  supabaseConfigured: true,
+  geminiConfigured: Boolean(environment.GEMINI_API_KEY),
+  apiUrl: environment.NEXT_PUBLIC_API_URL,
 });
-const environment = envSchema.parse(process.env);
+process.stdout.write(`MedVault worker environment: ${formatEnvironmentTopology(topology)}\n`);
 initializeWorkerSentry(environment.SENTRY_DSN, environment.SENTRY_ENVIRONMENT);
 
 interface ReportJobData {
@@ -40,9 +36,6 @@ interface ReportJobData {
 }
 
 if (!environment.GEMINI_API_KEY) {
-  if (environment.NODE_ENV === "production") {
-    throw new Error("GEMINI_API_KEY is required in production");
-  }
   process.stdout.write("Report worker idle: GEMINI_API_KEY is not configured\n");
   const idleTimer = setInterval(() => undefined, 60_000);
   const stopIdleWorker = () => {
@@ -53,7 +46,7 @@ if (!environment.GEMINI_API_KEY) {
   process.on("SIGINT", stopIdleWorker);
 } else {
   const prisma = getPrismaClient();
-  const connection = new IORedis(environment.REDIS_URL, { maxRetriesPerRequest: null });
+  const connection = createWorkerRedisConnection(environment.REDIS_URL);
   const processor = new ReportProcessor(
     new PrismaReportProcessorRepository(prisma),
     new SupabaseReportFileStorage(
@@ -85,10 +78,12 @@ if (!environment.GEMINI_API_KEY) {
     process.stderr.write("Report worker infrastructure error\n");
   });
 
+  let shuttingDown = false;
   async function shutdown(): Promise<void> {
-    await worker.close();
-    connection.disconnect();
-    await prisma.$disconnect();
+    if (shuttingDown) return;
+    shuttingDown = true;
+    await worker.close().catch(() => undefined);
+    await Promise.allSettled([closeWorkerRedisConnection(connection), prisma.$disconnect()]);
   }
 
   process.on("SIGTERM", () => void shutdown());

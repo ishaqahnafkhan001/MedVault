@@ -1,6 +1,6 @@
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
-import rateLimit from "express-rate-limit";
+import rateLimit, { type Store } from "express-rate-limit";
 import { fileTypeFromBuffer } from "file-type";
 import helmet from "helmet";
 import multer from "multer";
@@ -23,6 +23,8 @@ export interface CreateAppOptions {
   maxUploadBytes: number;
   rateLimitWindowMs?: number;
   rateLimitMax?: number;
+  rateLimitStore?: Store;
+  rateLimitPassOnStoreError?: boolean;
   signedUrlTtlSeconds?: number;
 }
 
@@ -40,19 +42,6 @@ export function createApp(options: CreateAppOptions) {
       methods: ["GET", "POST", "PUT", "DELETE"],
     }),
   );
-  app.use(
-    rateLimit({
-      windowMs: options.rateLimitWindowMs ?? 60_000,
-      limit: options.rateLimitMax ?? 120,
-      standardHeaders: "draft-8",
-      legacyHeaders: false,
-      message: {
-        error: { code: "RATE_LIMITED", message: "Too many requests. Please wait and try again." },
-      },
-    }),
-  );
-  app.use(express.json({ limit: "1mb" }));
-
   app.get("/", (_request, response) => {
     response.type("html").send(`<!doctype html>
 <html lang="en">
@@ -71,6 +60,20 @@ export function createApp(options: CreateAppOptions) {
 </html>`);
   });
   app.get("/health", (_request, response) => response.json({ status: "ok" }));
+  app.use(
+    rateLimit({
+      windowMs: options.rateLimitWindowMs ?? 60_000,
+      limit: options.rateLimitMax ?? 120,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      ...(options.rateLimitStore ? { store: options.rateLimitStore } : {}),
+      passOnStoreError: options.rateLimitPassOnStoreError ?? false,
+      message: {
+        error: { code: "RATE_LIMITED", message: "Too many requests. Please wait and try again." },
+      },
+    }),
+  );
+  app.use(express.json({ limit: "1mb" }));
   app.use("/v1", authenticate(options.authVerifier));
 
   app.get(
@@ -143,6 +146,13 @@ export function createApp(options: CreateAppOptions) {
         url: await options.service.getFileUrl(response.locals.auth.id, parseId(request.params.id)),
         expiresInSeconds: options.signedUrlTtlSeconds ?? 300,
       });
+    }),
+  );
+  app.delete(
+    "/v1/documents/:id",
+    asyncRoute(async (request, response) => {
+      await options.service.deleteDocument(response.locals.auth.id, parseId(request.params.id));
+      response.status(204).send();
     }),
   );
 
