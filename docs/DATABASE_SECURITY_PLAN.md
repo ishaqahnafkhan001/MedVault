@@ -1,6 +1,6 @@
 # Database Security Plan
 
-This plan describes the intended Phase 3 database security posture. Phase 2 did not change grants, schemas, RLS policies, or hosted database data. The 2026-08-30 Phase 3 attempt stopped before target inspection because the hosted PostgreSQL connection was unreachable from this client, so this plan has not yet been applied.
+This plan describes the intended hosted-database security posture. No grant, schema, policy, or hosted row was changed during the 2026-09-02 centralized-development audit. The plan has not yet been applied because it is an authorization-gated external database operation and the Prisma runtime-role behavior must be proven first.
 
 ## Current Access Model
 
@@ -8,7 +8,18 @@ This plan describes the intended Phase 3 database security posture. Phase 2 did 
 - The browser calls the authenticated Express API. Repository code does not query application tables through Supabase Data API, `supabase-js`, or a browser database client.
 - Supabase Auth establishes identity. API handlers derive the patient from the verified Auth user UUID; they do not accept a client-selected patient ID.
 - Supabase Storage is a separate private-object service. Its policies and `storage.objects` metadata are not substitutes for application-table authorization.
-- The current Prisma migration creates application tables in `public` and contains no RLS statements. The active structured development database is local PostgreSQL, not the hosted Supabase database.
+- The committed Prisma migration creates application tables in `public` and contains no RLS statements. The intended and only application system of record is the hosted Supabase PostgreSQL database; old local databases are unused legacy artifacts and must not be imported or deleted automatically.
+
+## Read-only hosted audit — 2026-09-02
+
+- The hosted project contains `patients`, `patient_profiles`, `medical_documents`, `report_extractions`, `report_measurements`, and `_prisma_migrations`.
+- The hosted initial migration history and checksum match the committed `20260807000000_initial` migration.
+- RLS is disabled and there are no policies on the five application tables.
+- `anon`, `authenticated`, and `service_role` currently hold broad application-table privileges. Supabase's security advisor flags RLS-disabled tables in the exposed `public` schema, including the migration table.
+- Repository browser code does not use the Data API for these tables, so those browser-role privileges are unnecessary.
+- The `medical-documents` Storage bucket is private. Storage access is server-side through the service-role client after Express ownership checks; no direct browser object policy is required by the implemented architecture.
+
+This is a remaining security risk, not an implemented protection. Until it is remediated, possession of a valid project public key/session may provide a path to the exposed Data API that bypasses Express authorization, depending on active grants and API schema settings.
 
 ## Recommended Phase 3 Posture
 
@@ -31,22 +42,19 @@ A future stronger design could use a `NOBYPASSRLS` runtime role and transaction-
 - Keep `auth`, `storage`, and `realtime` service schemas managed by Supabase. Do not directly delete Storage metadata rows; use the Storage API.
 - Verify default privileges so newly created tables do not silently become Data API-accessible.
 
-Exact SQL must be generated and reviewed against the selected Phase 3 target and its existing grants. It is intentionally absent from this Phase 2 document.
+Exact SQL must be generated and reviewed against the selected target and its existing grants. It is intentionally absent because blindly enabling RLS can break Prisma and blanket schema revocation can break Supabase-managed objects.
 
 Before generating SQL, inspect table owners, runtime/migration roles, `relrowsecurity`, policies, explicit grants, default ACLs, exposed schemas, and Data API settings. Blanket schema revokes can break Supabase-managed objects and are prohibited without that inventory. If possible, disable Data API exposure before applying the initial Prisma migration so there is no interval in which new medical tables inherit browser-accessible grants.
 
-## Phase 3 Migration Sequence
+## Authorization-gated hardening sequence
 
-1. Verify the local and hosted project identities, connectivity, PostgreSQL versions, and migration histories without changing either database.
-2. Record local and hosted row counts per application table without printing row contents.
-3. Create and verify restorable backups before any schema or data operation.
-4. Rehearse schema creation, data transfer, grants, and rollback against an isolated non-production target.
-5. Decide whether application tables will use a non-exposed schema or remain in `public` with restrictive grants and RLS defense in depth.
-6. Rehearse the exact connection-role/RLS combination and prove Prisma CRUD still works without broad policies.
-7. Apply schema and grants through a reviewed migration, then run database security/performance advisors.
-8. Test that `anon`, `authenticated`, and service-role HTTP clients cannot access the five application tables.
-9. Validate API ownership and IDOR tests using two identities. Confirm the browser has no direct table access.
-10. Pause writes for the final transfer, verify row counts and integrity relationships, switch API and worker together, and keep the rollback checkpoint intact.
-11. Observe errors and queue reconciliation before declaring the hosted database authoritative.
+1. Confirm the Data API exposed schemas and current default privileges in the Supabase Dashboard.
+2. Create and test a dedicated least-privilege Prisma runtime role, separate from the migration owner where supported.
+3. In an isolated environment, revoke application-table access from `anon`, `authenticated`, `PUBLIC`, and HTTP `service_role` where it is not needed.
+4. Decide whether to move application tables out of an exposed schema or keep them in `public` with RLS defense in depth.
+5. Rehearse the exact connection-role/RLS combination and prove API/worker CRUD still works. Never add blanket `USING (true)` policies.
+6. Apply reviewed, idempotent DDL only after explicit authorization, then rerun security/performance advisors.
+7. Prove public/anonymous and authenticated Data API clients cannot read or mutate the five application tables.
+8. Rerun two-user API IDOR tests and live profile/document/worker flows.
 
-No security DDL in this sequence was executed during the blocked Phase 3 attempt. See `DATABASE_MIGRATION_RUNBOOK.md` for the resume gates.
+No security DDL in this sequence has been executed.

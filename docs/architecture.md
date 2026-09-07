@@ -1,21 +1,25 @@
 # MVP implementation architecture
 
-This document describes the implemented MVP code path. The configured development topology is currently hybrid: local PostgreSQL is selected for structured data while Supabase Auth/Storage and the effective Redis target are hosted. Hosted PostgreSQL is the target production system of record, but cutover and cross-device persistence are not verified.
+This document describes the local-application/shared-data development architecture. Each computer runs its own Next.js, Express, and worker processes, while permanent data and queue state live in the same hosted services. No public API, deployment platform, domain, local PostgreSQL, or local Redis is required.
 
 ```text
-Next.js web --Supabase access token--> Express API --ownership-scoped queries--> PostgreSQL
-                                               |--> private Supabase Storage
-                                               |--> BullMQ / Redis
-                                                        |
-                                                        v
-                                              worker -> Gemini structured output
-                                                        |
-                                                        v
-                                              Zod validation -> NEEDS_REVIEW
-                                                        |
-                                                        v
-                                              patient correction -> VERIFIED
+Mac                                      Windows
+Next.js :3000                            Next.js :3000
+Express :4000                            Express :4000
+worker                                   worker
+   |                                        |
+   +-------------------+--------------------+
+                       |
+                       v
+        shared Supabase Auth + PostgreSQL
+        private Supabase Storage
+        hosted Redis Cloud / BullMQ
+        Gemini
 ```
+
+Hosted PostgreSQL is the authoritative store for patients, profiles, document metadata, extractions, and measurements. Supabase Auth is authoritative for accounts and sessions. The private Supabase Storage bucket is authoritative for file bytes. Redis/BullMQ contains recoverable processing state, not medical records. Browser memory and browser storage are never authoritative for medical data.
+
+The repository enforces remote PostgreSQL and Redis targets by default. A complete live cutover still requires valid private connection strings on each machine and the acceptance tests described in the environment contract; configuration alone is not cross-device proof.
 
 The browser authenticates through Supabase. The API independently verifies every bearer token and resolves an internal patient from the Supabase user ID. Resource identifiers never establish ownership; every profile, document, extraction, signed-file, verification, retry, and search query is scoped to that patient.
 
@@ -28,6 +32,8 @@ Documents stored as `PRESCRIPTION` take a separate terminal path: they use proce
 AI output is extraction, not medical advice. It remains `NEEDS_REVIEW` and is excluded from latest results. Verification stores patient-confirmed fields without deleting model provenance or the original Storage object. Latest reports are verified-only and ordered by `documentDate DESC, createdAt DESC`; upload date never substitutes for an unknown report date.
 
 Adapters isolate Supabase Storage, Supabase Auth, BullMQ, and Gemini so unit and API tests run without external services. Sentry is optional and sanitizes request data when configured.
+
+The API and worker import one shared queue name, job name, and runtime-validated payload contract. BullMQ job IDs contain the document ID and `documentVersion`; the database claim and version-conditional transaction make duplicate delivery safe. For development simplicity, run one worker. Multiple workers may run against the same hosted Redis/database pair and will compete for jobs normally.
 
 ## REST resources
 

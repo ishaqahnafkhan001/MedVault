@@ -1,5 +1,9 @@
 # MedVault Database Migration Runbook
 
+> **SUPERSEDED FOR THE 2026-09-02 CENTRALIZED-DEVELOPMENT DECISION. DO NOT EXECUTE THIS LOCAL-DATA TRANSFER PROCEDURE.** The owner explicitly chose not to preserve, merge, or import either computer's local PostgreSQL rows. Hosted Supabase PostgreSQL is the only intended application database; old local databases stay untouched as unused artifacts. The current setup path is: verify hosted migration history, configure the exact reachable hosted URL, run `pnpm db:deploy` for committed migrations only, verify the five application tables, and run the live checks in `ENVIRONMENTS.md`. Never reset the hosted database.
+
+The remainder of this file is retained only as historical continuity for the earlier migration plan.
+
 This runbook moves MedVault application rows from the legacy local Docker PostgreSQL database to the intended hosted PostgreSQL database without moving Supabase Auth users or re-uploading Supabase Storage objects.
 
 The procedure is intentionally stop-on-uncertainty. Never use `prisma migrate reset`, `prisma db push`, a forced Prisma migration resolution, destructive target cleanup, or automatic orphan deletion.

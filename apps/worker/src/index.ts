@@ -4,9 +4,14 @@ import { fileURLToPath } from "node:url";
 import * as Sentry from "@sentry/node";
 import { GeminiReportExtractionAdapter } from "@medvault/ai";
 import { getPrismaClient } from "@medvault/database";
-import { describeEnvironmentTopology, formatEnvironmentTopology } from "@medvault/shared";
+import {
+  REPORT_ANALYSIS_QUEUE,
+  describeEnvironmentTopology,
+  formatEnvironmentTopology,
+} from "@medvault/shared";
 import { UnrecoverableError, Worker, type Job } from "bullmq";
 import { loadWorkerConfig } from "./config.js";
+import { parseReportJob } from "./job-contract.js";
 import { PermanentProcessingError, ReportProcessor } from "./processor.js";
 import { PrismaReportProcessorRepository } from "./prisma-repository.js";
 import { closeWorkerRedisConnection, createWorkerRedisConnection } from "./redis-connection.js";
@@ -30,11 +35,6 @@ const topology = describeEnvironmentTopology({
 process.stdout.write(`MedVault worker environment: ${formatEnvironmentTopology(topology)}\n`);
 initializeWorkerSentry(environment.SENTRY_DSN, environment.SENTRY_ENVIRONMENT);
 
-interface ReportJobData {
-  documentId: string;
-  documentVersion: number;
-}
-
 if (!environment.GEMINI_API_KEY) {
   process.stdout.write("Report worker idle: GEMINI_API_KEY is not configured\n");
   const idleTimer = setInterval(() => undefined, 60_000);
@@ -57,11 +57,12 @@ if (!environment.GEMINI_API_KEY) {
     new GeminiReportExtractionAdapter(environment.GEMINI_API_KEY, environment.GEMINI_MODEL),
   );
 
-  const worker = new Worker<ReportJobData>(
-    "report-analysis",
-    async (job: Job<ReportJobData>) => {
+  const worker = new Worker<unknown>(
+    REPORT_ANALYSIS_QUEUE,
+    async (job: Job<unknown>) => {
+      const data = parseReportJob(job);
       try {
-        return await processor.process(job.data, {
+        return await processor.process(data, {
           number: job.attemptsMade + 1,
           maximum: job.opts.attempts ?? 1,
         });

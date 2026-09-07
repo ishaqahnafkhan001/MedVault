@@ -11,8 +11,55 @@ describe("API environment", () => {
     expect(production.RATE_LIMIT_FAIL_OPEN).toBe(false);
   });
 
-  it("loads a complete local development configuration when explicitly allowed", () => {
-    expect(loadConfig(validEnvironment()).DATABASE_URL).toContain("localhost");
+  it("loads a complete hosted development configuration", () => {
+    const config = loadConfig(validEnvironment());
+    expect(config.DATABASE_URL).toContain("pooler.supabase.test");
+    expect(config.REDIS_URL).toContain("redis.example.test");
+  });
+
+  it("rejects local Redis by default and permits only an explicit optional override", () => {
+    const local = { ...validEnvironment(), REDIS_URL: "redis://default:secret@localhost:6379/0" };
+    expect(() => loadConfig(local)).toThrowError(
+      "Local Redis is disabled by MEDVAULT_ALLOW_LOCAL_REDIS",
+    );
+    expect(() => loadConfig({ ...local, MEDVAULT_ALLOW_LOCAL_REDIS: "true" })).not.toThrow();
+  });
+
+  it("accepts both hosted Redis URL protocols in development", () => {
+    expect(() =>
+      loadConfig({
+        ...validEnvironment(),
+        REDIS_URL: "redis://default:secret@redis.example.test:6379/0",
+      }),
+    ).not.toThrow();
+    expect(() => loadConfig(validEnvironment())).not.toThrow();
+  });
+
+  it("requires encrypted Redis in production without exposing credentials", () => {
+    const environment = {
+      ...validEnvironment(),
+      NODE_ENV: "production",
+      REDIS_URL: "redis://default:production-secret@redis.example.test:6379/0",
+    };
+    expect(() => loadConfig(environment)).toThrowError(
+      "REDIS_URL must use rediss:// in production",
+    );
+    try {
+      loadConfig(environment);
+      throw new Error("Expected production Redis validation to fail");
+    } catch (error) {
+      expect(String(error)).not.toContain("production-secret");
+      expect(String(error)).not.toContain(environment.REDIS_URL);
+    }
+  });
+
+  it.each([
+    "rediss://default:secret@redis.example.test:6380/0?tls=",
+    "rediss://default:secret@redis.example.test:6380/0?tls",
+  ])("rejects a production Redis TLS query override in %s", (redisUrl) => {
+    expect(() =>
+      loadConfig({ ...validEnvironment(), NODE_ENV: "production", REDIS_URL: redisUrl }),
+    ).toThrowError("REDIS_URL must use rediss:// in production");
   });
 
   it("reports missing variable names without printing configured secrets", () => {
@@ -32,9 +79,11 @@ describe("API environment", () => {
 function validEnvironment(): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "development",
-    DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/medvault",
-    MEDVAULT_ALLOW_LOCAL_DATABASE: "true",
-    REDIS_URL: "redis://localhost:6379",
+    DATABASE_URL:
+      "postgresql://postgres.project-ref:password@aws-0-region.pooler.supabase.test:5432/postgres",
+    MEDVAULT_ALLOW_LOCAL_DATABASE: "false",
+    REDIS_URL: "rediss://default:password@redis.example.test:6380/0",
+    MEDVAULT_ALLOW_LOCAL_REDIS: "false",
     SUPABASE_URL: "https://project.example.test",
     SUPABASE_ANON_KEY: "public-anon-placeholder",
     SUPABASE_SERVICE_ROLE_KEY: "service-role-placeholder",

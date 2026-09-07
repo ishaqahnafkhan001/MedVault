@@ -1,16 +1,18 @@
 # Backup and Recovery
 
-No repository evidence establishes that usable PostgreSQL, Storage, or Auth backups currently exist. This document defines the required strategy and validation work; it does not claim that any backup has been configured.
+No repository evidence establishes that usable hosted PostgreSQL, Storage, or Auth backups currently exist. This document defines the required strategy and validation work; it does not claim that any backup has been configured or restored successfully.
 
-The 2026-08-30 Phase 3 attempt did not create a backup because the local Docker PostgreSQL source was unavailable. `backups/` is now ignored to prevent an eventual logical dump from entering Git, but ignore rules are not encryption. `DATABASE_MIGRATION_RUNBOOK.md` contains the gated custom dump, schema export, archive validation, and isolated PostgreSQL 17 restore rehearsal. Until that rehearsal passes, migration and cutover remain blocked.
+The explicit 2026-09-02 decision discards previous Mac/Windows local database records. Local databases remain untouched, unused legacy artifacts; they are not the system of record, a migration source, or a valid rollback target for new hosted writes. No local dump/import/merge is required. `backups/` remains ignored, but ignore rules are not encryption.
+
+The hosted Supabase PostgreSQL database and private Storage bucket are now the intended authorities. Provider backup configuration, recovery-point objectives, protected exports, and an isolated restore rehearsal remain unverified operational gates before real medical-data use.
 
 ## PostgreSQL
 
-Before Phase 3, create both a schema-only export and a complete logical backup using an approved PostgreSQL tool compatible with the source and target versions. Store backups encrypted, access-controlled, outside the database host, and with documented retention.
+Before real medical-data use, create both a schema-only export and a complete logical backup of the hosted application database using an approved PostgreSQL tool compatible with Supabase PostgreSQL 17. Store backups encrypted, access-controlled, outside the database host, and with documented retention.
 
-A migration checkpoint must include:
+A recovery checkpoint must include:
 
-- source database/project identity and timestamp;
+- hosted project/database identity and timestamp;
 - latest Prisma migration name;
 - schema-only export;
 - complete logical backup;
@@ -18,7 +20,7 @@ A migration checkpoint must include:
 - backup checksum and protected storage location;
 - restore owner and rollback decision point.
 
-Test restoration into an isolated database, never over the source. Run Prisma migration status/validation, table-count comparisons, referential-integrity checks, representative authenticated API reads, and IDOR tests. A backup is not considered available until this restore test succeeds.
+Test restoration into an isolated database, never over the active hosted project. Run Prisma migration status/validation, table-count comparisons, referential-integrity checks, representative authenticated API reads, and IDOR tests. A backup is not considered available until this restore test succeeds.
 
 ## Supabase Storage
 

@@ -362,3 +362,16 @@ This architecture is documented but not yet the verified running architecture be
 - Database/Storage/queue mutations: none
 - Live-test boundary: API health, Auth, CRUD, upload, signed URL, queue, worker extraction, verification, dashboard, cross-device persistence, IDOR, deletion, reconciliation, failure injection, hosted security, and rollback rehearsal were not runnable against the intended databases and are not claimed.
 - Phase completion: Phase 1 and Phase 2 remain complete. Phase 3 remains unchecked until every runbook gate and live verification passes.
+
+## Centralized local-application development addendum — 2026-09-02
+
+- Decision: discard previous Mac/Windows local PostgreSQL records. Do not migrate, merge, import, reset, or delete local or hosted data.
+- Target topology: local Next.js/Express/worker processes on each computer with one shared Supabase Auth/PostgreSQL/private-Storage project, one hosted Redis Cloud database, and Gemini.
+- Hosted schema evidence: read-only inspection found the five application tables and `_prisma_migrations`; `20260807000000_initial` is finished and its checksum matches the committed migration. Existing hosted rows were not changed.
+- Storage evidence: the `medical-documents` bucket exists and is private. No object was uploaded, downloaded, or deleted during the audit.
+- Configuration finding: this checkout's ignored `.env.local` still selects local PostgreSQL. The fallback direct hosted endpoint is unreachable from this IPv4-only workstation, and the current remote Redis provider is Railway, which the owner excluded. Live cutover therefore remains blocked on an exact Supavisor Session pooler URL and a permitted Redis Cloud URL.
+- Repository remediation: hosted values are the documented defaults; API/worker reject local Redis unless deliberately opted in and require canonical `rediss://` in production; queue name/job/payload are shared and runtime validated; producer Redis requests use bounded retries; authenticated query caches are isolated and discarded on logout/account changes. The local-API exception is fail-closed and must be explicitly enabled for the intended local-only Next.js build.
+- Database-security finding: the browser does not need the Supabase Data API, but the five public application tables have RLS disabled, no policies, and broad browser-role grants. Hardening is a separate authorization-gated external operation and was not applied.
+- Automated proof: lint and typecheck passed across all workspaces; 124 tests passed; all seven build tasks passed; Prisma client generation and schema validation passed; formatting and diff checks passed. These are mocked/local code-path results, not live provider proof.
+- Live proof: hosted API/worker database and Redis connections, profile persistence, document upload/retrieval, worker/Gemini processing, fresh-session persistence, and two-device persistence remain unproven until the missing private connection settings are installed on both computers.
+- Phase status: the safe repository changes for centralized development are complete. Effective hosted-service cutover and the broader Phase 3 remain incomplete until the live gates pass; no completion box is checked from mocked evidence.

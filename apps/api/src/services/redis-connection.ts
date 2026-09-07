@@ -3,11 +3,10 @@ import IORedis from "ioredis";
 export type RedisPurpose = "queue-producer" | "rate-limit";
 
 export function createApiRedisConnection(redisUrl: string, purpose: RedisPurpose): IORedis {
-  const queueConnection = purpose === "queue-producer";
   const connection = new IORedis(redisUrl, {
     connectionName: `medvault-api-${purpose}`,
     enableReadyCheck: true,
-    maxRetriesPerRequest: queueConnection ? null : 1,
+    maxRetriesPerRequest: 1,
     connectTimeout: 5_000,
     retryStrategy(attempt) {
       return Math.min(250 * attempt, 5_000);

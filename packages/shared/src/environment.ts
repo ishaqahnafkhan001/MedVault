@@ -24,6 +24,7 @@ const localHostnames = new Set([
   "gateway.docker.internal",
   "docker.for.win.localhost",
   "postgres",
+  "redis",
 ]);
 
 export function configurationError(scope: string, issues: readonly EnvironmentIssue[]): Error {
@@ -94,6 +95,35 @@ export function validateDatabaseEnvironment(
   return { databaseUrl, allowLocalDatabase };
 }
 
+export function validateRedisEnvironment(
+  environment: EnvironmentRecord,
+  scope: string,
+  nodeEnvironment: "development" | "test" | "production",
+): { redisUrl: string; allowLocalRedis: boolean } {
+  const issues: EnvironmentIssue[] = [];
+  const redisUrl = environment.REDIS_URL?.trim() ?? "";
+  if (!redisUrl) {
+    issues.push({ variable: "REDIS_URL", problem: "is required" });
+  } else if (!isServiceUrl(redisUrl, ["redis", "rediss"])) {
+    issues.push({ variable: "REDIS_URL", problem: "must be a valid Redis URL" });
+  } else if (nodeEnvironment === "production" && !isEncryptedRedisUrl(redisUrl)) {
+    issues.push({ variable: "REDIS_URL", problem: "must use rediss:// in production" });
+  }
+
+  const allowSetting = environment.MEDVAULT_ALLOW_LOCAL_REDIS?.trim().toLowerCase() ?? "false";
+  if (allowSetting !== "true" && allowSetting !== "false") {
+    issues.push({
+      variable: "MEDVAULT_ALLOW_LOCAL_REDIS",
+      problem: 'must be either "true" or "false"',
+    });
+  }
+  if (issues.length) throw configurationError(scope, issues);
+
+  const allowLocalRedis = allowSetting === "true";
+  assertRedisLocationAllowed(redisUrl, allowLocalRedis);
+  return { redisUrl, allowLocalRedis };
+}
+
 export function assertDatabaseLocationAllowed(
   databaseUrl: string,
   allowLocalDatabase: boolean,
@@ -105,18 +135,31 @@ export function assertDatabaseLocationAllowed(
   }
 }
 
+export function assertRedisLocationAllowed(redisUrl: string, allowLocalRedis: boolean): void {
+  if (!allowLocalRedis && classifyServiceUrl(redisUrl) === "local") {
+    throw new Error(
+      "Local Redis is disabled by MEDVAULT_ALLOW_LOCAL_REDIS. Set it to true only for intentional optional local tooling.",
+    );
+  }
+}
+
 export function validatePublicApiUrl(
   apiUrl: string,
   nodeEnvironment: "development" | "test" | "production",
+  allowLocalApi = false,
 ): void {
   if (!isServiceUrl(apiUrl, ["http", "https"])) {
     throw configurationError("web", [
       { variable: "NEXT_PUBLIC_API_URL", problem: "must be a valid HTTP(S) URL" },
     ]);
   }
-  if (nodeEnvironment === "production" && classifyServiceUrl(apiUrl) === "local") {
+  if (
+    nodeEnvironment === "production" &&
+    classifyServiceUrl(apiUrl) === "local" &&
+    !allowLocalApi
+  ) {
     throw new Error(
-      "NEXT_PUBLIC_API_URL must not use localhost or another local address in production.",
+      "NEXT_PUBLIC_API_URL must not use localhost in a deployed build. Set NEXT_PUBLIC_ALLOW_LOCAL_API=true only for the local-application development architecture.",
     );
   }
 }
@@ -153,4 +196,13 @@ function isIpv4Part(value: string): boolean {
   if (!/^\d{1,3}$/.test(value)) return false;
   const number = Number(value);
   return number >= 0 && number <= 255;
+}
+
+function isEncryptedRedisUrl(value: string): boolean {
+  if (!value.startsWith("rediss://")) return false;
+  try {
+    return !new URL(value).searchParams.has("tls");
+  } catch {
+    return false;
+  }
 }

@@ -1,15 +1,17 @@
 import { Queue } from "bullmq";
 import type IORedis from "ioredis";
-import type { DocumentType } from "@medvault/shared";
+import {
+  REPORT_ANALYSIS_JOB,
+  REPORT_ANALYSIS_QUEUE,
+  reportJobDataSchema,
+  type DocumentType,
+  type ReportJobData as SharedReportJobData,
+} from "@medvault/shared";
 import { AppError } from "../errors.js";
 import { closeRedisConnection, createApiRedisConnection } from "./redis-connection.js";
 
-export const REPORT_ANALYSIS_QUEUE = "report-analysis";
-
-export interface ReportJobData {
-  documentId: string;
-  documentVersion: number;
-}
+export { REPORT_ANALYSIS_JOB, REPORT_ANALYSIS_QUEUE };
+export type ReportJobData = SharedReportJobData;
 
 export interface ReportQueue {
   enqueue(documentType: DocumentType, data: ReportJobData): Promise<void>;
@@ -47,50 +49,70 @@ export class BullMqReportQueue implements ReportQueue {
 
   async enqueue(documentType: DocumentType, data: ReportJobData): Promise<void> {
     assertReportOnly(documentType);
-    await this.add(data);
+    const jobData = validReportJobData(data);
+    try {
+      await this.add(jobData);
+    } catch (error) {
+      throw asQueueError(error);
+    }
   }
 
   async ensureQueued(data: ReportJobData): Promise<"enqueued" | "existing"> {
-    const existing = await this.queue.getJob(reportJobId(data));
-    if (existing) {
-      const state = normalizeJobState(await existing.getState());
-      if (state === "active" || state === "waiting" || state === "delayed") return "existing";
-      try {
-        await existing.remove();
-      } catch {
-        const current = await this.getState(data);
-        if (current === "active" || current === "waiting" || current === "delayed") {
-          return "existing";
+    const jobData = validReportJobData(data);
+    try {
+      const existing = await this.queue.getJob(reportJobId(jobData));
+      if (existing) {
+        const state = normalizeJobState(await existing.getState());
+        if (state === "active" || state === "waiting" || state === "delayed") return "existing";
+        try {
+          await existing.remove();
+        } catch {
+          const current = await this.getState(jobData);
+          if (current === "active" || current === "waiting" || current === "delayed") {
+            return "existing";
+          }
+          throw queueUnavailable();
         }
-        throw queueUnavailable();
       }
+      await this.add(jobData);
+      return "enqueued";
+    } catch (error) {
+      throw asQueueError(error);
     }
-    await this.add(data);
-    return "enqueued";
   }
 
   async getState(data: ReportJobData): Promise<ReportJobState> {
-    const job = await this.queue.getJob(reportJobId(data));
-    return job ? normalizeJobState(await job.getState()) : "missing";
+    const jobData = validReportJobData(data);
+    try {
+      const job = await this.queue.getJob(reportJobId(jobData));
+      return job ? normalizeJobState(await job.getState()) : "missing";
+    } catch (error) {
+      throw asQueueError(error);
+    }
   }
 
   async removeForDeletion(data: ReportJobData): Promise<"removed" | "missing" | "active"> {
-    const job = await this.queue.getJob(reportJobId(data));
-    if (!job) return "missing";
-    if (normalizeJobState(await job.getState()) === "active") return "active";
+    const jobData = validReportJobData(data);
     try {
-      await job.remove();
-      return "removed";
-    } catch {
-      const current = await this.getState(data);
-      if (current === "active") return "active";
-      if (current === "missing") return "missing";
-      throw queueUnavailable();
+      const job = await this.queue.getJob(reportJobId(jobData));
+      if (!job) return "missing";
+      if (normalizeJobState(await job.getState()) === "active") return "active";
+      try {
+        await job.remove();
+        return "removed";
+      } catch {
+        const current = await this.getState(jobData);
+        if (current === "active") return "active";
+        if (current === "missing") return "missing";
+        throw queueUnavailable();
+      }
+    } catch (error) {
+      throw asQueueError(error);
     }
   }
 
   private async add(data: ReportJobData): Promise<void> {
-    await this.queue.add("extract-report", data, {
+    await this.queue.add(REPORT_ANALYSIS_JOB, data, {
       jobId: reportJobId(data),
       attempts: 4,
       backoff: { type: "exponential", delay: 2_000 },
@@ -117,4 +139,16 @@ function normalizeJobState(state: string): ReportJobState {
 
 function queueUnavailable(): AppError {
   return new AppError(503, "QUEUE_UNAVAILABLE", "Background processing is unavailable right now.");
+}
+
+function validReportJobData(data: ReportJobData): ReportJobData {
+  const parsed = reportJobDataSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new AppError(500, "INVALID_QUEUE_PAYLOAD", "Background processing request is invalid.");
+  }
+  return parsed.data;
+}
+
+function asQueueError(error: unknown): AppError {
+  return error instanceof AppError ? error : queueUnavailable();
 }

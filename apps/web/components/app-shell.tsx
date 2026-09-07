@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { FileText, FolderHeart, LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
 import { useState } from "react";
@@ -16,13 +16,11 @@ const nav = [
 
 export function AppShell({ children, email }: { children: ReactNode; email: string }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   async function logout() {
     await getSupabaseBrowserClient().auth.signOut();
-    router.replace("/auth/login");
-    router.refresh();
+    window.location.replace("/auth/login");
   }
 
   return (

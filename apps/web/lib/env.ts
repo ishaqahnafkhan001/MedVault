@@ -11,6 +11,7 @@ export interface PublicEnvironment {
   NEXT_PUBLIC_SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   NEXT_PUBLIC_API_URL: string;
+  NEXT_PUBLIC_ALLOW_LOCAL_API: boolean;
 }
 
 export function loadPublicEnvironment(
@@ -44,14 +45,25 @@ export function loadPublicEnvironment(
     issues.push({ variable: "NEXT_PUBLIC_API_URL", problem: "must be a valid HTTP(S) URL" });
   }
 
+  const allowLocalApiSetting =
+    environment.NEXT_PUBLIC_ALLOW_LOCAL_API?.trim().toLowerCase() ?? "false";
+  if (allowLocalApiSetting !== "true" && allowLocalApiSetting !== "false") {
+    issues.push({
+      variable: "NEXT_PUBLIC_ALLOW_LOCAL_API",
+      problem: 'must be either "true" or "false"',
+    });
+  }
+
   if (issues.length) throw configurationError("web", issues);
   const validNodeEnvironment = nodeEnvironment as PublicEnvironment["NODE_ENV"];
-  validatePublicApiUrl(apiUrl, validNodeEnvironment);
+  const allowLocalApi = allowLocalApiSetting === "true";
+  validatePublicApiUrl(apiUrl, validNodeEnvironment, allowLocalApi);
   return {
     NODE_ENV: validNodeEnvironment,
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey,
     NEXT_PUBLIC_API_URL: apiUrl,
+    NEXT_PUBLIC_ALLOW_LOCAL_API: allowLocalApi,
   };
 }
 
@@ -73,6 +85,7 @@ function currentPublicEnvironment(): EnvironmentRecord {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_ALLOW_LOCAL_API: process.env.NEXT_PUBLIC_ALLOW_LOCAL_API,
   };
 }
 

@@ -40,11 +40,16 @@ export function ProfileForm({ onboarding = false }: { onboarding?: boolean }) {
     },
   });
   useEffect(() => {
-    if (profile.data?.profile) {
-      const p = profile.data.profile;
+    if (!profile.data) return;
+    const p = profile.data.profile;
+    if (p) {
       setForm(p);
       setAllergies(p.allergies.join(", "));
       setConditions(p.chronicConditions.join(", "));
+    } else {
+      setForm(empty);
+      setAllergies("");
+      setConditions("");
     }
   }, [profile.data]);
 

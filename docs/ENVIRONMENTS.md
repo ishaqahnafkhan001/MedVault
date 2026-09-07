@@ -6,31 +6,32 @@ The API, worker, Prisma commands, and Next.js configuration follow this preceden
 
 ## Local Development
 
-The normal local-development option is a hybrid topology:
+The normal development topology keeps application processes local and data services shared:
 
-- PostgreSQL: `localhost:5432` from `docker-compose.yml`
-- Redis: `localhost:6379` from `docker-compose.yml`
+- PostgreSQL: the intended hosted Supabase project
+- Redis/BullMQ: one hosted Redis Cloud database
 - API: `http://localhost:4000`
 - Web: `http://localhost:3000`
-- Supabase Auth and private Storage: hosted Supabase project
-- Gemini: hosted Google service when a key is configured; otherwise the development worker stays idle
+- Auth and private Storage: the same hosted Supabase project on both computers
+- Gemini: the same approved hosted service configuration; without a key the development worker stays idle
 
-Set `MEDVAULT_ALLOW_LOCAL_DATABASE=true` whenever `DATABASE_URL` intentionally targets localhost, loopback, the Docker host gateway, or the Compose `postgres` service. With the setting false or omitted, local PostgreSQL is rejected.
+On both Mac and Windows, `DATABASE_URL`, `REDIS_URL`, all Supabase settings, the Storage bucket, and the Gemini configuration must identify the same shared services. `NEXT_PUBLIC_API_URL` and `WEB_ORIGIN` remain localhost because each browser calls the API running on its own computer. Set `NEXT_PUBLIC_ALLOW_LOCAL_API=true`; Next.js uses production mode during a build even when that build will run only on the local computer.
 
-Redis is selected only by the effective `REDIS_URL`. Starting the Docker Redis container does not select it. If `.env` contains a Railway Redis URL and `.env.local` does not override `REDIS_URL`, the API and worker use Railway. Safe startup diagnostics report `redis=local` or `redis=remote` and the hostname only; credentials and full URLs are never logged.
+`MEDVAULT_ALLOW_LOCAL_DATABASE` and `MEDVAULT_ALLOW_LOCAL_REDIS` default to `false`. The API, worker, and Prisma reject loopback/Docker service targets unless the applicable setting is deliberately changed to `true`. Those overrides support optional legacy/test tooling only and are not part of the standard workflow.
 
-## Shared Development / Staging
+The effective value comes from the first source that defines a variable: an existing process variable, then root `.env.local`, then root `.env`. Remove stale local database/Redis overrides and allow flags from `.env.local`; otherwise they take priority over the hosted values in `.env`. Safe startup diagnostics show only local/remote classification and the Redis hostname, never credentials or full URLs.
 
-A shared environment should use isolated non-production resources:
+## Two-computer shared development
 
-- A shared remote PostgreSQL database
-- A shared remote Redis instance
-- A dedicated Supabase project for Auth and private Storage
-- A deployed HTTPS API URL
-- A separate Gemini key with appropriate quotas and access controls
-- Optional Sentry projects dedicated to that environment
+Each computer runs:
 
-Set `MEDVAULT_ALLOW_LOCAL_DATABASE=false`. Use the same PostgreSQL and Redis targets for the API and worker. Do not mix a shared queue with per-developer databases because a worker can consume a job whose document does not exist in its database.
+- Next.js on `http://localhost:3000`
+- Express on `http://localhost:4000`
+- optionally one local BullMQ worker
+
+The two machines must use byte-for-byte equivalent logical targets for PostgreSQL and Redis, including the Redis database path. Run only one worker for normal development. If both run, BullMQ distributes work and the versioned database claim protects against duplicate extraction. If neither runs, documents remain queued and recover when a worker starts.
+
+Never mix a shared Redis queue with a local or different PostgreSQL database: a worker could consume a document ID that does not exist in its database.
 
 ## Production
 
@@ -43,7 +44,7 @@ Production is expected to use:
 - A configured Gemini key; the worker refuses to start without it
 - Explicit monitoring, backup, restore, retention, and incident-response procedures
 
-Set `NODE_ENV=production` and `MEDVAULT_ALLOW_LOCAL_DATABASE=false`. This repository does not define a production domain or provision production infrastructure.
+Set `NODE_ENV=production`, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, and `MEDVAULT_ALLOW_LOCAL_REDIS=false`. This repository does not define a production domain or provision production infrastructure. Production deployment is outside the current task.
 
 ## Hosted PostgreSQL Connection Contract
 
@@ -59,15 +60,17 @@ For Supabase PostgreSQL:
 
 Use a dedicated least-privilege runtime PostgreSQL role rather than a provider owner/admin role when the target supports it. Migration ownership and runtime access should be separate. Exact role/grant/RLS SQL remains blocked until the target's live owners, grants, default ACLs, Data API exposure, and RLS posture are inspected.
 
-During Phase 3 discovery, inject the candidate hosted URL as a process variable. Existing process variables win over `.env.local` and `.env`, so this permits a read-only target check without changing development configuration. Only after backup, migration, row-count, relationship, Storage, Auth, and rollback gates pass should the local `DATABASE_URL`/allow flag be removed from `.env.local` and both API and worker be switched together.
+The explicit 2026-09-02 development decision discards old local application records. Do not import or merge local database rows and do not delete the old databases. Treat them as unused legacy artifacts. Inspect hosted migration history first, then use `pnpm db:deploy` to apply only committed migrations when needed. Never use `prisma migrate reset`, a destructive reset, or blind `prisma db push` against the shared project.
+
+The hosted project currently contains the five application tables and the committed `20260807000000_initial` migration with a matching checksum. That read-only schema verification does not prove that a local process can connect through its private `DATABASE_URL`.
 
 ## Production Deployment Manifest
 
 Review these groups as one release artifact; never commit their values.
 
-- Frontend: `NODE_ENV=production`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and an HTTPS `NEXT_PUBLIC_API_URL`.
-- API: `NODE_ENV=production`, hosted `DATABASE_URL`, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, hosted `REDIS_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, HTTPS `WEB_ORIGIN`, Redis-backed/fail-closed rate limiting, and the documented API/reconciliation settings.
-- Worker: `NODE_ENV=production`, the exact same logical `DATABASE_URL` and `REDIS_URL` as the API, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, the matching `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, bucket, `GEMINI_API_KEY`, model, concurrency, and monitoring settings.
+- Frontend: `NODE_ENV=production`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ALLOW_LOCAL_API=false`, and an HTTPS `NEXT_PUBLIC_API_URL`.
+- API: `NODE_ENV=production`, hosted `DATABASE_URL`, both local-service allow flags false, a TLS-enabled hosted `REDIS_URL` using `rediss://`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, HTTPS `WEB_ORIGIN`, Redis-backed/fail-closed rate limiting, and the documented API/reconciliation settings.
+- Worker: `NODE_ENV=production`, the exact same logical `DATABASE_URL` and TLS-enabled `REDIS_URL` as the API, both local-service allow flags false, the matching `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, bucket, `GEMINI_API_KEY`, model, concurrency, and monitoring settings.
 - Migration operator/job: an explicitly injected hosted `DATABASE_URL` for the same target, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, and no browser exposure.
 
 The server and public Supabase URLs must identify the intended Auth/Storage project. The database connection must be independently verified as that project's intended PostgreSQL target; matching text in local configuration is not live identity proof.
@@ -76,37 +79,39 @@ The server and public Supabase URLs must identify the intended Auth/Storage proj
 
 Examples below are placeholders, not working credentials.
 
-| Variable                            | Used by                     | Visibility                | Requirement                                     | Purpose                                                     | Safe example                                         |
-| ----------------------------------- | --------------------------- | ------------------------- | ----------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------- |
-| `NODE_ENV`                          | API, worker, web            | Server/build              | Optional; defaults to development               | Selects development, test, or production validation         | `development`                                        |
-| `DATABASE_URL`                      | API, worker, Prisma         | Secret/server             | Required                                        | PostgreSQL connection                                       | `postgresql://user:password@localhost:5432/medvault` |
-| `MEDVAULT_ALLOW_LOCAL_DATABASE`     | API, worker, Prisma         | Server                    | Optional; defaults false                        | Explicitly permits an intentional local PostgreSQL target   | `true`                                               |
-| `REDIS_URL`                         | API, worker                 | Secret/server             | Required                                        | BullMQ Redis connection                                     | `redis://localhost:6379`                             |
-| `SUPABASE_URL`                      | API, worker                 | Server                    | Required                                        | Supabase project API URL for Auth verification and Storage  | `https://project-ref.supabase.co`                    |
-| `SUPABASE_ANON_KEY`                 | API                         | Public-grade server value | Required                                        | Verifies bearer sessions through Supabase Auth              | `your-public-anon-or-publishable-key`                |
-| `SUPABASE_SERVICE_ROLE_KEY`         | API, worker                 | **Secret/server only**    | Required                                        | Private Storage upload, download, removal, and signed URLs  | `your-server-only-service-role-key`                  |
-| `SUPABASE_STORAGE_BUCKET`           | API, worker                 | Server                    | Optional; defaults to `medical-documents`       | Private medical-file bucket                                 | `medical-documents`                                  |
-| `NEXT_PUBLIC_SUPABASE_URL`          | Browser, Next.js server     | Public                    | Required                                        | Browser Supabase Auth endpoint                              | `https://project-ref.supabase.co`                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`     | Browser, Next.js server     | Public                    | Required                                        | Browser Supabase public key                                 | `your-public-anon-or-publishable-key`                |
-| `NEXT_PUBLIC_API_URL`               | Browser, build              | Public                    | Required                                        | REST API base URL; local allowed only outside production    | `http://localhost:4000`                              |
-| `API_PORT`                          | API                         | Server                    | Optional; defaults 4000                         | API listen port                                             | `4000`                                               |
-| `WEB_ORIGIN`                        | API                         | Server                    | Optional; defaults localhost web                | Allowed CORS origin                                         | `http://localhost:3000`                              |
-| `MAX_UPLOAD_BYTES`                  | API                         | Server                    | Optional                                        | Maximum request file size                                   | `15728640`                                           |
-| `SIGNED_URL_TTL_SECONDS`            | API                         | Server                    | Optional                                        | Supabase signed-file URL lifetime                           | `300`                                                |
-| `RATE_LIMIT_WINDOW_MS`              | API                         | Server                    | Optional                                        | Rate-limit window                                           | `60000`                                              |
-| `RATE_LIMIT_MAX`                    | API                         | Server                    | Optional                                        | Requests per rate-limit window                              | `120`                                                |
-| `RATE_LIMIT_BACKEND`                | API                         | Server                    | Optional; memory in dev, Redis in production    | Shared or process-local limiter selection                   | `memory`                                             |
-| `RATE_LIMIT_FAIL_OPEN`              | API                         | Server                    | Optional; true in dev, false in production      | Explicit request behavior during limiter-store outage       | `true`                                               |
-| `REPORT_STALE_AFTER_SECONDS`        | API                         | Server                    | Optional; defaults 900                          | Minimum age before queue reconciliation                     | `900`                                                |
-| `REPORT_RECONCILE_INTERVAL_SECONDS` | API                         | Server                    | Optional; defaults 60                           | Reconciliation scan interval                                | `60`                                                 |
-| `REPORT_RECONCILE_BATCH_SIZE`       | API                         | Server                    | Optional; defaults 100                          | Maximum stale reports per reconciliation pass               | `100`                                                |
-| `REPORT_MAX_PROCESSING_ATTEMPTS`    | API                         | Server                    | Optional; defaults 8                            | Worker-processing-claim threshold checked by reconciliation | `8`                                                  |
-| `GEMINI_API_KEY`                    | Worker                      | **Secret/server only**    | Optional in development; required in production | Authorizes report fact extraction                           | `your-server-only-gemini-api-key`                    |
-| `GEMINI_MODEL`                      | Worker                      | Server                    | Optional                                        | Gemini model identifier                                     | `gemini-2.5-flash`                                   |
-| `REPORT_QUEUE_CONCURRENCY`          | Worker                      | Server                    | Optional                                        | Concurrent BullMQ jobs, limited to 1–10                     | `2`                                                  |
-| `SENTRY_DSN`                        | API, worker, Next.js server | Secret/server             | Optional                                        | Server error reporting                                      | blank                                                |
-| `NEXT_PUBLIC_SENTRY_DSN`            | Browser                     | Public                    | Optional                                        | Browser error reporting                                     | blank                                                |
-| `SENTRY_ENVIRONMENT`                | API, worker                 | Server                    | Optional                                        | Monitoring environment label                                | `development`                                        |
+| Variable                            | Used by                     | Visibility                | Requirement                                     | Purpose                                                          | Safe example                                                                           |
+| ----------------------------------- | --------------------------- | ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `NODE_ENV`                          | API, worker, web            | Server/build              | Optional; defaults to development               | Selects development, test, or production validation              | `development`                                                                          |
+| `DATABASE_URL`                      | API, worker, Prisma         | Secret/server             | Required                                        | Exact hosted PostgreSQL direct/session-pooler connection         | `postgresql://user.project:password@pooler.example.test:5432/postgres?sslmode=require` |
+| `MEDVAULT_ALLOW_LOCAL_DATABASE`     | API, worker, Prisma         | Server                    | Optional; defaults false                        | Explicitly permits optional local PostgreSQL tooling             | `false`                                                                                |
+| `REDIS_URL`                         | API, worker                 | Secret/server             | Required                                        | Complete hosted BullMQ Redis connection, including DB path       | `rediss://default:password@redis.example.test:6380/0`                                  |
+| `MEDVAULT_ALLOW_LOCAL_REDIS`        | API, worker                 | Server                    | Optional; defaults false                        | Explicitly permits optional local Redis tooling                  | `false`                                                                                |
+| `SUPABASE_URL`                      | API, worker                 | Server                    | Required                                        | Supabase project API URL for Auth verification and Storage       | `https://project-ref.supabase.co`                                                      |
+| `SUPABASE_ANON_KEY`                 | API                         | Public-grade server value | Required                                        | Verifies bearer sessions through Supabase Auth                   | `your-public-anon-or-publishable-key`                                                  |
+| `SUPABASE_SERVICE_ROLE_KEY`         | API, worker                 | **Secret/server only**    | Required                                        | Private Storage upload, download, removal, and signed URLs       | `your-server-only-service-role-key`                                                    |
+| `SUPABASE_STORAGE_BUCKET`           | API, worker                 | Server                    | Optional; defaults to `medical-documents`       | Private medical-file bucket                                      | `medical-documents`                                                                    |
+| `NEXT_PUBLIC_SUPABASE_URL`          | Browser, Next.js server     | Public                    | Required                                        | Browser Supabase Auth endpoint                                   | `https://project-ref.supabase.co`                                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`     | Browser, Next.js server     | Public                    | Required                                        | Browser Supabase public key                                      | `your-public-anon-or-publishable-key`                                                  |
+| `NEXT_PUBLIC_API_URL`               | Browser, build              | Public                    | Required                                        | REST API base URL                                                | `http://localhost:4000`                                                                |
+| `NEXT_PUBLIC_ALLOW_LOCAL_API`       | Browser, build              | Public                    | Optional; defaults false                        | Explicitly permits localhost during a Next production-mode build | `true`                                                                                 |
+| `API_PORT`                          | API                         | Server                    | Optional; defaults 4000                         | API listen port                                                  | `4000`                                                                                 |
+| `WEB_ORIGIN`                        | API                         | Server                    | Optional; defaults localhost web                | Allowed CORS origin                                              | `http://localhost:3000`                                                                |
+| `MAX_UPLOAD_BYTES`                  | API                         | Server                    | Optional                                        | Maximum request file size                                        | `15728640`                                                                             |
+| `SIGNED_URL_TTL_SECONDS`            | API                         | Server                    | Optional                                        | Supabase signed-file URL lifetime                                | `300`                                                                                  |
+| `RATE_LIMIT_WINDOW_MS`              | API                         | Server                    | Optional                                        | Rate-limit window                                                | `60000`                                                                                |
+| `RATE_LIMIT_MAX`                    | API                         | Server                    | Optional                                        | Requests per rate-limit window                                   | `120`                                                                                  |
+| `RATE_LIMIT_BACKEND`                | API                         | Server                    | Optional; memory in dev, Redis in production    | Shared or process-local limiter selection                        | `memory`                                                                               |
+| `RATE_LIMIT_FAIL_OPEN`              | API                         | Server                    | Optional; true in dev, false in production      | Explicit request behavior during limiter-store outage            | `true`                                                                                 |
+| `REPORT_STALE_AFTER_SECONDS`        | API                         | Server                    | Optional; defaults 900                          | Minimum age before queue reconciliation                          | `900`                                                                                  |
+| `REPORT_RECONCILE_INTERVAL_SECONDS` | API                         | Server                    | Optional; defaults 60                           | Reconciliation scan interval                                     | `60`                                                                                   |
+| `REPORT_RECONCILE_BATCH_SIZE`       | API                         | Server                    | Optional; defaults 100                          | Maximum stale reports per reconciliation pass                    | `100`                                                                                  |
+| `REPORT_MAX_PROCESSING_ATTEMPTS`    | API                         | Server                    | Optional; defaults 8                            | Worker-processing-claim threshold checked by reconciliation      | `8`                                                                                    |
+| `GEMINI_API_KEY`                    | Worker                      | **Secret/server only**    | Optional in development; required in production | Authorizes report fact extraction                                | `your-server-only-gemini-api-key`                                                      |
+| `GEMINI_MODEL`                      | Worker                      | Server                    | Optional                                        | Gemini model identifier                                          | `gemini-2.5-flash`                                                                     |
+| `REPORT_QUEUE_CONCURRENCY`          | Worker                      | Server                    | Optional                                        | Concurrent BullMQ jobs, limited to 1–10                          | `2`                                                                                    |
+| `SENTRY_DSN`                        | API, worker, Next.js server | Secret/server             | Optional                                        | Server error reporting                                           | blank                                                                                  |
+| `NEXT_PUBLIC_SENTRY_DSN`            | Browser                     | Public                    | Optional                                        | Browser error reporting                                          | blank                                                                                  |
+| `SENTRY_ENVIRONMENT`                | API, worker                 | Server                    | Optional                                        | Monitoring environment label                                     | `development`                                                                          |
 
 ## Safe Diagnostics
 
@@ -131,7 +136,19 @@ The repository validates structured Gemini output and prohibits diagnosis, inter
 
 - Never put `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, database credentials, or Redis credentials in a `NEXT_PUBLIC_*` variable.
 - Never use a local or loopback `DATABASE_URL` when `MEDVAULT_ALLOW_LOCAL_DATABASE=false`.
-- Never build production web assets with a local or loopback `NEXT_PUBLIC_API_URL`.
+- Never use a local or loopback `REDIS_URL` when `MEDVAULT_ALLOW_LOCAL_REDIS=false`.
+- Production requires a canonical lowercase `rediss://` Redis URL without a `tls` query override; plaintext `redis://` remains a development-only option.
+- For any future deployment, set `NEXT_PUBLIC_ALLOW_LOCAL_API=false` and use a non-local HTTPS `NEXT_PUBLIC_API_URL`.
 - Keep API and worker database/Redis targets aligned within each environment.
 - Keep database, Redis, service-role, Gemini, and migration credentials out of every `NEXT_PUBLIC_*` variable.
 - Do not copy development `.env` files into production.
+
+## Live acceptance checklist
+
+Use synthetic data only. These checks are operational and must not be marked passed from unit tests:
+
+1. Stop local PostgreSQL and Redis, set the exact hosted URLs, and run `pnpm db:generate`, `pnpm db:deploy`, then `pnpm dev`.
+2. Confirm API and worker diagnostics both say `database=remote` and `redis=remote` with the expected safe hostname.
+3. Save a synthetic profile, refresh, sign out, clear browser application data, sign in, and confirm the same profile returns.
+4. Upload a synthetic report; confirm its database row, private object, BullMQ job, worker processing, extraction, and `NEEDS_REVIEW` state.
+5. Sign in to the same account from the other computer with the same hosted settings and confirm the same profile, document, signed preview, and extraction.

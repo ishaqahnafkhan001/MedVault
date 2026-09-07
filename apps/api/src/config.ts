@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { isServiceUrl, validateDatabaseEnvironment } from "@medvault/shared";
+import {
+  isServiceUrl,
+  validateDatabaseEnvironment,
+  validateRedisEnvironment,
+} from "@medvault/shared";
 
 const serviceUrl = (protocols: readonly string[], description: string) =>
   z
@@ -17,6 +21,7 @@ const configSchema = z.object({
   DATABASE_URL: z.string().min(1),
   MEDVAULT_ALLOW_LOCAL_DATABASE: z.enum(["true", "false"]).default("false"),
   REDIS_URL: serviceUrl(["redis", "rediss"], "Redis"),
+  MEDVAULT_ALLOW_LOCAL_REDIS: z.enum(["true", "false"]).default("false"),
   SUPABASE_URL: serviceUrl(["http", "https"], "Supabase HTTP(S)"),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
@@ -64,6 +69,14 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiCon
       MEDVAULT_ALLOW_LOCAL_DATABASE: result.data.MEDVAULT_ALLOW_LOCAL_DATABASE,
     },
     "API",
+  );
+  validateRedisEnvironment(
+    {
+      REDIS_URL: result.data.REDIS_URL,
+      MEDVAULT_ALLOW_LOCAL_REDIS: result.data.MEDVAULT_ALLOW_LOCAL_REDIS,
+    },
+    "API",
+    result.data.NODE_ENV,
   );
   return {
     ...result.data,
