@@ -15,6 +15,21 @@ describe("API environment", () => {
     const config = loadConfig(validEnvironment());
     expect(config.DATABASE_URL).toContain("pooler.supabase.test");
     expect(config.REDIS_URL).toContain("redis.example.test");
+    expect(config.GEMINI_MODEL).toBe("gemini-3.6-flash");
+  });
+
+  it("preserves a trimmed explicit Gemini model override", () => {
+    const config = loadConfig({
+      ...validEnvironment(),
+      GEMINI_MODEL: "  approved-model-override  ",
+    });
+    expect(config.GEMINI_MODEL).toBe("approved-model-override");
+  });
+
+  it.each(["", " \t "])("rejects an empty Gemini model value", (model) => {
+    expect(() => loadConfig({ ...validEnvironment(), GEMINI_MODEL: model })).toThrowError(
+      "GEMINI_MODEL",
+    );
   });
 
   it("rejects local Redis by default and permits only an explicit optional override", () => {
@@ -73,6 +88,32 @@ describe("API environment", () => {
       expect(String(error)).toContain("SUPABASE_SERVICE_ROLE_KEY");
       expect(String(error)).not.toContain("sensitive-anon-value");
     }
+  });
+
+  it("refuses a migration-owner credential in the API process without printing it", () => {
+    const environment = {
+      ...validEnvironment(),
+      MIGRATION_DATABASE_URL:
+        "postgresql://migration:api-owner-secret@migration.example.test:5432/postgres",
+    };
+    try {
+      loadConfig(environment);
+      throw new Error("Expected migration credential isolation to fail");
+    } catch (error) {
+      expect(String(error)).toContain("MIGRATION_DATABASE_URL");
+      expect(String(error)).not.toContain("api-owner-secret");
+      expect(String(error)).not.toContain(environment.MIGRATION_DATABASE_URL);
+    }
+  });
+
+  it.each([
+    ["absent", undefined],
+    ["empty", ""],
+    ["whitespace-only", " \t "],
+  ])("allows a %s migration credential value in the API environment", (_case, value) => {
+    const environment = validEnvironment();
+    if (value !== undefined) environment.MIGRATION_DATABASE_URL = value;
+    expect(() => loadConfig(environment)).not.toThrow();
   });
 });
 

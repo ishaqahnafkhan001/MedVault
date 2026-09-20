@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/client.js";
 
 export * from "./generated/client.js";
+export * from "./summaries.js";
 
 const globalDatabase = globalThis as typeof globalThis & { medvaultPrisma?: PrismaClient };
 

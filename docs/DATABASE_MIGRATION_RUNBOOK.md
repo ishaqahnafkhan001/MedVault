@@ -47,10 +47,11 @@ Suggested process-only variables are:
 
 ```powershell
 $env:MEDVAULT_SOURCE_DATABASE_URL = '<loaded from an approved secret source>'
-$env:MEDVAULT_TARGET_DATABASE_URL = '<loaded from an approved secret source>'
+$env:MEDVAULT_TARGET_RUNTIME_DATABASE_URL = '<least-privilege runtime identity>'
+$env:MEDVAULT_TARGET_MIGRATION_DATABASE_URL = '<migration-owner identity>'
 ```
 
-Clear those variables when the migration shell closes. Do not print them.
+The two target variables must identify the same logical database but different roles. Load only the variable required for a bounded operation, clear it in `finally`, and close the dedicated shell after the operation. Do not print them or start the API/worker from a migration shell.
 
 ## Safety Gates
 
@@ -230,14 +231,20 @@ Use the Supabase project Connect panel to select an exact connection method:
 - Supavisor session pooler on port 5432: appropriate for this long-running Express API/worker and for Prisma tooling when the execution environment is IPv4-only.
 - Supavisor transaction pooler on port 6543: intended for short-lived/serverless connections and not the default for this architecture.
 
-The current repository accepts one `DATABASE_URL` for Prisma tooling and runtime. Do not add a second URL operationally until repository support and tests for that URL are committed. A session-pooler URL may be used consistently for the current long-running processes and migration commands if that is the provider-approved connection shown by the project.
+The repository now separates credentials while requiring one logical database: API/worker use least-privilege `DATABASE_URL`, and Prisma CLI prefers migration-owner `MIGRATION_DATABASE_URL`. A session-pooler URL may be used for either identity when it is the provider-approved connection shown by the project. Never point the two variables at different databases. Keep the owner URL out of shared application `.env` files and application deployment environments.
 
-Set the target URL in the process environment so the ignored `.env.local` cannot override it:
+Load the target URL from the approved secret store into a dedicated migration shell that will never start the API or worker. The example removes both temporary variables even when the command fails; reacquire the secret for each later migration step:
 
 ```powershell
-$env:DATABASE_URL = $env:MEDVAULT_TARGET_DATABASE_URL
+$env:MIGRATION_DATABASE_URL = $env:MEDVAULT_TARGET_MIGRATION_DATABASE_URL
 $env:MEDVAULT_ALLOW_LOCAL_DATABASE = 'false'
-pnpm --filter @medvault/database exec prisma migrate status
+try {
+  pnpm --filter @medvault/database exec prisma migrate status
+  if ($LASTEXITCODE -ne 0) { throw "Prisma migration status failed with exit code $LASTEXITCODE" }
+} finally {
+  Remove-Item Env:MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+  Remove-Item Env:MEDVAULT_TARGET_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+}
 ```
 
 Then use a read-only PostgreSQL client to record:
@@ -384,13 +391,20 @@ Do not use `prisma migrate resolve` merely to make histories look aligned. A bas
 
 Before an initial schema deployment, disable the project's Data API or remove `public` from its exposed surface unless an independently reviewed configuration already prevents access. This must happen before the application tables exist; do not create an interval where empty medical tables receive automatic HTTP-role privileges.
 
-After all pre-schema gates pass and with the target URL set explicitly in the process environment:
+After all pre-schema gates pass, reacquire the owner URL in the dedicated migration shell and remove it on every exit path:
 
 ```powershell
-$env:DATABASE_URL = $env:MEDVAULT_TARGET_DATABASE_URL
+$env:MIGRATION_DATABASE_URL = $env:MEDVAULT_TARGET_MIGRATION_DATABASE_URL
 $env:MEDVAULT_ALLOW_LOCAL_DATABASE = 'false'
-pnpm db:deploy
-pnpm --filter @medvault/database exec prisma migrate status
+try {
+  pnpm db:deploy
+  if ($LASTEXITCODE -ne 0) { throw "Prisma migration deploy failed with exit code $LASTEXITCODE" }
+  pnpm --filter @medvault/database exec prisma migrate status
+  if ($LASTEXITCODE -ne 0) { throw "Prisma migration status failed with exit code $LASTEXITCODE" }
+} finally {
+  Remove-Item Env:MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+  Remove-Item Env:MEDVAULT_TARGET_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+}
 ```
 
 `prisma migrate deploy` applies committed migrations without a development shadow database. Never use `prisma migrate dev` against the hosted target.
@@ -515,19 +529,25 @@ try {
   docker start --attach $migrationClient
   Assert-NativeSuccess 'restore data into target'
 } finally {
-  $candidate = docker ps -aq --filter "name=^/$migrationClient$"
-  if ($candidate) {
-    $observedToken = docker inspect --format '{{ index .Config.Labels "medvault.phase3.client" }}' $migrationClient
-    if ($LASTEXITCODE -ne 0 -or $observedToken -ne $migrationToken) {
-      throw 'Refusing cleanup because the migration-client label does not match'
+  try {
+    $candidate = docker ps -aq --filter "name=^/$migrationClient$"
+    if ($candidate) {
+      $observedToken = docker inspect --format '{{ index .Config.Labels "medvault.phase3.client" }}' $migrationClient
+      if ($LASTEXITCODE -ne 0 -or $observedToken -ne $migrationToken) {
+        throw 'Refusing cleanup because the migration-client label does not match'
+      }
+      docker rm --force $migrationClient
+      Assert-NativeSuccess 'remove target migration client'
     }
-    docker rm --force $migrationClient
-    Assert-NativeSuccess 'remove target migration client'
+  } finally {
+    'PGHOST', 'PGPORT', 'PGUSER', 'PGDATABASE', 'PGPASSWORD', 'PGSSLMODE' | ForEach-Object {
+      Remove-Item "Env:$_" -ErrorAction SilentlyContinue
+    }
   }
 }
 ```
 
-Any nonzero client exit stops cutover. The labeled client is removed even after failure; keep the protected archive.
+Any nonzero client exit stops cutover. The labeled client is removed and the temporary PostgreSQL environment variables are cleared even after failure; keep the protected archive.
 
 Do not disable foreign keys for a convenience merge. Do not restore `_prisma_migrations` as data after `prisma migrate deploy`; migration history is established by Prisma deploy and must match the separately reviewed source history.
 
@@ -537,12 +557,18 @@ Compare source and target counts for all five application tables. Each count mus
 
 Run the relationship, duplicate, empty-path, and document-version checks from Preflight on the target. Every failure count must be zero.
 
-Run the bounded consistency command against the target through an explicit process environment:
+Run the bounded consistency command in a dedicated verification shell using the least-privilege runtime identity, never the migration owner. Remove both temporary variables before any application startup:
 
 ```powershell
-$env:DATABASE_URL = $env:MEDVAULT_TARGET_DATABASE_URL
+$env:DATABASE_URL = $env:MEDVAULT_TARGET_RUNTIME_DATABASE_URL
 $env:MEDVAULT_ALLOW_LOCAL_DATABASE = 'false'
-pnpm --filter @medvault/api check:consistency
+try {
+  pnpm --filter @medvault/api check:consistency
+  if ($LASTEXITCODE -ne 0) { throw "Target consistency check failed with exit code $LASTEXITCODE" }
+} finally {
+  Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+  Remove-Item Env:MEDVAULT_TARGET_RUNTIME_DATABASE_URL -ErrorAction SilentlyContinue
+}
 ```
 
 Record only counts and fingerprints. For each `medical_documents.storage_path`, verify metadata-level existence in private bucket `medical-documents`. Report missing, inaccessible, and potential-orphan counts; never auto-delete or bulk-download objects. Reconcile the six candidates recorded in Phase 2 against hosted database rows before declaring Storage consistent.
@@ -557,9 +583,9 @@ Cutover is permitted only after every verification gate passes.
 
 1. Keep API and worker stopped from the write-freeze window.
 2. Save the pre-cutover local environment configuration in the approved secret/operations store.
-3. Configure the API and worker with the exact same hosted `DATABASE_URL`, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, Supabase project variables, and hosted `REDIS_URL`.
-4. Configure Prisma deployment commands with the reviewed hosted connection.
-5. Remove `DATABASE_URL` and `MEDVAULT_ALLOW_LOCAL_DATABASE=true` from repository-root `.env.local` so it cannot silently override the shared target. Keep unrelated local settings if needed. Do not delete the legacy database or its backup.
+3. Configure the API and worker with the exact same least-privilege hosted `DATABASE_URL`, `MEDVAULT_ALLOW_LOCAL_DATABASE=false`, Supabase project variables, and hosted `REDIS_URL`.
+4. Inject the migration-owner `MIGRATION_DATABASE_URL` only into a dedicated Prisma deployment process for that exact same database, remove it after the command even on failure, and never expose it to application processes or shared `.env` files.
+5. Remove stale `DATABASE_URL`, `MIGRATION_DATABASE_URL`, and `MEDVAULT_ALLOW_LOCAL_DATABASE=true` values from repository-root `.env.local` so they cannot silently override the shared target. Keep unrelated local settings if needed. Do not delete the legacy database or its backup.
 6. Set the deployed web app to a non-local HTTPS `NEXT_PUBLIC_API_URL` and the matching public Supabase URL/key.
 7. Start the API, then the worker. Confirm safe startup diagnostics classify database and Redis as remote without printing URLs.
 8. Run API health and a read-only profile request before re-enabling writes.

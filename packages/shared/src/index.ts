@@ -2,6 +2,15 @@ import { z } from "zod";
 
 export * from "./environment.js";
 export * from "./queue.js";
+export * from "./analysis.js";
+import {
+  episodeAnalysisSchema,
+  latestMetricCardSchema,
+  type EpisodeAnalysisDto,
+  type LatestMetricCardDto,
+} from "./analysis.js";
+
+export const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 
 export const documentTypes = ["REPORT", "PRESCRIPTION"] as const;
 export const processingStatuses = [
@@ -135,6 +144,30 @@ export type ReportExtraction = z.infer<typeof reportExtractionSchema>;
 export type VerifyReportInput = z.infer<typeof verifyReportSchema>;
 export type DocumentListQuery = z.infer<typeof documentListQuerySchema>;
 
+export const createEpisodeSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120),
+    startDate: z.iso.date().nullable().optional(),
+    endDate: z.iso.date().nullable().optional(),
+  })
+  .strict()
+  .refine(
+    (v) => !v.startDate || !v.endDate || v.startDate <= v.endDate,
+    "End date must not precede start date",
+  );
+export type CreateEpisodeInput = z.infer<typeof createEpisodeSchema>;
+
+export const episodeDocumentIdsSchema = z
+  .object({
+    documentIds: z
+      .array(z.uuid())
+      .min(1)
+      .max(30)
+      .refine((ids) => new Set(ids).size === ids.length, "Duplicate report IDs"),
+  })
+  .strict();
+export type EpisodeDocumentIdsInput = z.infer<typeof episodeDocumentIdsSchema>;
+
 export interface PatientProfileDto extends PatientProfileInput {
   patientId: string;
   completed: boolean;
@@ -175,6 +208,119 @@ export interface ReportDetailDto extends DocumentDto {
   fileUrl?: string;
 }
 
+export interface EpisodeDto {
+  id: string;
+  title: string;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EpisodeDetailDto extends EpisodeDto {
+  documents: DocumentDto[];
+  analyses: EpisodeAnalysisDto[];
+  summaryUnavailable?: boolean;
+}
+
+export const documentDtoSchema = z.object({
+  id: z.uuid(),
+  documentType: documentTypeSchema,
+  originalFilename: z.string(),
+  mimeType: z.string(),
+  fileSize: z.number().int().nonnegative(),
+  uploadedAt: z.iso.datetime(),
+  documentDate: z.iso.date().nullable(),
+  hospitalName: z.string().nullable(),
+  testName: z.string().nullable(),
+  normalizedTestName: z.string().nullable(),
+  category: reportCategorySchema.nullable(),
+  processingStatus: processingStatusSchema,
+  verificationStatus: verificationStatusSchema,
+  failureCode: z.string().nullable(),
+});
+export const measurementDtoSchema = z
+  .object({
+    id: z.uuid(),
+    name: z.string().max(180),
+    normalizedName: z.string().max(180),
+    textValue: z.string().max(240).nullable(),
+    numericValue: z.number().finite().nullable(),
+    unit: z.string().max(80).nullable(),
+    referenceRange: z.string().max(160).nullable(),
+    sourceFlag: z.string().max(40).nullable(),
+    patientCorrected: z.boolean(),
+  })
+  .strict();
+export const reportDetailDtoSchema = documentDtoSchema
+  .extend({
+    patientNameOnReport: z.string().max(120).nullable(),
+    measurements: z.array(measurementDtoSchema).max(300),
+  })
+  .strict();
+export const reportDetailResponseSchema = z.object({ report: reportDetailDtoSchema }).strict();
+export const signedFileResponseSchema = z
+  .object({
+    url: z
+      .url()
+      .refine((value) => value.startsWith("https://"), "Private file links require HTTPS"),
+    expiresInSeconds: z.number().int().min(30).max(3600),
+  })
+  .strict();
+export const documentResponseSchema = z.object({ document: documentDtoSchema }).strict();
+
+export const episodeDtoSchema = z.object({
+  id: z.uuid(),
+  title: z.string().min(1).max(120),
+  startDate: z.iso.date().nullable(),
+  endDate: z.iso.date().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export const episodeDetailDtoSchema = episodeDtoSchema.extend({
+  documents: z.array(documentDtoSchema),
+  analyses: z.array(episodeAnalysisSchema),
+  summaryUnavailable: z.boolean().optional(),
+});
+export const episodeResponseSchema = z.object({ episode: episodeDetailDtoSchema });
+export const episodeCreateResponseSchema = z.object({ episode: episodeDtoSchema });
+export const episodeListResponseSchema = z.object({ episodes: z.array(episodeDtoSchema) });
+export const episodeAddResponseSchema = z.object({
+  episode: episodeDetailDtoSchema,
+  added: z.array(z.uuid()),
+  skipped: z.array(z.object({ id: z.uuid(), reason: z.string() })),
+});
+export const documentListResponseSchema = z.object({
+  items: z.array(documentDtoSchema),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  total: z.number().int(),
+  totalPages: z.number().int(),
+});
+
+export interface DashboardDto {
+  recentDocuments: DocumentDto[];
+  latestReports: DocumentDto[];
+  latestMetrics: LatestMetricCardDto[];
+  latestMetricsLimited: boolean;
+  counts: { processing: number; needsReview: number; verified: number };
+}
+export const dashboardResponseSchema = z
+  .object({
+    recentDocuments: z.array(documentDtoSchema).max(6),
+    latestReports: z.array(documentDtoSchema).max(12),
+    latestMetrics: z.array(latestMetricCardSchema).max(12),
+    latestMetricsLimited: z.boolean(),
+    counts: z
+      .object({
+        processing: z.number().int().nonnegative(),
+        needsReview: z.number().int().nonnegative(),
+        verified: z.number().int().nonnegative(),
+      })
+      .strict(),
+  })
+  .strict();
+
 export interface PaginatedDto<T> {
   items: T[];
   page: number;
@@ -186,3 +332,133 @@ export interface PaginatedDto<T> {
 export interface ApiErrorDto {
   error: { code: string; message: string; requestId?: string; fieldErrors?: unknown };
 }
+
+// ── Episode trend / summary ───────────────────────────────────────────────────
+
+export interface EpisodeAddResultDto {
+  added: string[];
+  skipped: { id: string; reason: string }[];
+  episode: EpisodeDetailDto;
+}
+
+// ── Medication ────────────────────────────────────────────────────────────────
+
+export const MEDICATION_STATUS = [
+  "ACTIVE",
+  "PAUSED",
+  "COMPLETED",
+  "DISCONTINUED",
+  "ARCHIVED",
+] as const;
+export type MedicationStatus = (typeof MEDICATION_STATUS)[number];
+
+export const SCHEDULE_FREQUENCY = [
+  "ONCE_DAILY",
+  "TWICE_DAILY",
+  "THREE_TIMES_DAILY",
+  "FOUR_TIMES_DAILY",
+  "EVERY_X_HOURS",
+  "AS_NEEDED",
+  "CUSTOM",
+] as const;
+export type ScheduleFrequency = (typeof SCHEDULE_FREQUENCY)[number];
+
+export const MEAL_TIMING = ["BEFORE_MEAL", "WITH_MEAL", "AFTER_MEAL", "NOT_SPECIFIED"] as const;
+export type MealTiming = (typeof MEAL_TIMING)[number];
+
+export const OCCURRENCE_STATUS = [
+  "SCHEDULED",
+  "DUE",
+  "OVERDUE",
+  "TAKEN",
+  "SKIPPED",
+  "CANCELLED",
+] as const;
+export type OccurrenceStatus = (typeof OCCURRENCE_STATUS)[number];
+
+export const createMedicationSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  resolvedGeneric: z.string().trim().max(200).optional().nullable(),
+  strength: z.string().trim().max(80).optional().nullable(),
+  doseAmount: z.string().trim().max(80).optional().nullable(),
+  doseUnit: z.string().trim().max(40).optional().nullable(),
+  formulation: z.string().trim().max(80).optional().nullable(),
+  route: z.string().trim().max(80).optional().nullable(),
+  startDate: z.iso.date().optional().nullable(),
+  endDate: z.iso.date().optional().nullable(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  prescriptionId: z.string().uuid().optional().nullable(),
+});
+export type CreateMedicationInput = z.infer<typeof createMedicationSchema>;
+
+export const updateMedicationSchema = createMedicationSchema.extend({
+  status: z.enum(MEDICATION_STATUS).optional(),
+});
+export type UpdateMedicationInput = z.infer<typeof updateMedicationSchema>;
+
+export interface MedicationDto {
+  id: string;
+  name: string;
+  resolvedGeneric: string | null;
+  resolvedStatus: string;
+  strength: string | null;
+  doseAmount: string | null;
+  doseUnit: string | null;
+  formulation: string | null;
+  route: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  status: MedicationStatus;
+  notes: string | null;
+  prescriptionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const createScheduleSchema = z.object({
+  frequency: z.enum(SCHEDULE_FREQUENCY),
+  administrationTimes: z.array(z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:mm")).min(1),
+  mealTiming: z.enum(MEAL_TIMING).optional().default("NOT_SPECIFIED"),
+  ianaTimezone: z.string().min(1).max(80),
+  startDate: z.iso.date(),
+  endDate: z.iso.date().optional().nullable(),
+  stockCount: z.number().int().min(0).optional().nullable(),
+  refillAlertAt: z.number().int().min(0).optional().nullable(),
+});
+export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
+
+export interface MedicationScheduleDto {
+  id: string;
+  medicationId: string;
+  version: number;
+  frequency: ScheduleFrequency;
+  administrationTimes: string[];
+  mealTiming: MealTiming;
+  ianaTimezone: string;
+  startDate: string;
+  endDate: string | null;
+  stockCount: number | null;
+  refillAlertAt: number | null;
+  active: boolean;
+  createdAt: string;
+}
+
+export const logIntakeSchema = z.object({
+  action: z.enum(["TAKEN", "SKIPPED"]),
+  loggedAt: z.iso.datetime(),
+  notes: z.string().trim().max(500).optional().nullable(),
+});
+export type LogIntakeInput = z.infer<typeof logIntakeSchema>;
+
+export interface OccurrenceDto {
+  id: string;
+  scheduleId: string;
+  dueAt: string;
+  localTimeStr: string;
+  status: OccurrenceStatus;
+}
+
+// ── Queue constants ───────────────────────────────────────────────────────────
+
+export const EPISODE_SUMMARY_QUEUE = "episode-summary";
+export const REMINDER_QUEUE = "medication-reminders";

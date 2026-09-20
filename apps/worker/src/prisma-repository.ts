@@ -26,6 +26,15 @@ export class PrismaReportProcessorRepository implements ReportProcessorRepositor
     ) {
       return "complete";
     }
+    // Bail out if document is in a state we must not transition from
+    // (cancelled by user, already being processed by another worker, etc.)
+    if (
+      document.processingStatus !== "UPLOADED" &&
+      document.processingStatus !== "QUEUED" &&
+      document.processingStatus !== "PROCESSING"
+    ) {
+      return null;
+    }
     if (!supportedMimeTypes.has(document.mimeType)) {
       await this.markUnclaimedFailure(document.id, documentVersion, "UNSUPPORTED_REPORT");
       return null;
@@ -41,7 +50,7 @@ export class PrismaReportProcessorRepository implements ReportProcessorRepositor
         id: documentId,
         documentVersion,
         documentType: "REPORT",
-        processingStatus: { in: ["UPLOADED", "QUEUED", "FAILED"] },
+        processingStatus: { in: ["UPLOADED", "QUEUED"] },
       },
       data: {
         processingStatus: "PROCESSING",
@@ -170,6 +179,24 @@ export class PrismaReportProcessorRepository implements ReportProcessorRepositor
     });
   }
 
+  async markAsPrescription(document: ClaimedReport): Promise<void> {
+    await this.prisma.medicalDocument.updateMany({
+      where: {
+        id: document.id,
+        documentVersion: document.documentVersion,
+        documentType: "REPORT",
+        processingStatus: "PROCESSING",
+      },
+      data: {
+        documentType: "PRESCRIPTION",
+        processingStatus: "NOT_APPLICABLE",
+        verificationStatus: "NOT_APPLICABLE",
+        failureCode: null,
+        processingStartedAt: null,
+      },
+    });
+  }
+
   private async markUnclaimedFailure(
     documentId: string,
     documentVersion: number,
@@ -180,7 +207,7 @@ export class PrismaReportProcessorRepository implements ReportProcessorRepositor
         id: documentId,
         documentVersion,
         documentType: "REPORT",
-        processingStatus: { in: ["UPLOADED", "QUEUED", "FAILED"] },
+        processingStatus: { in: ["UPLOADED", "QUEUED"] },
       },
       data: { processingStatus: "FAILED", failureCode: safeCode },
     });

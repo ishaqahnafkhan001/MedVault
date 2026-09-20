@@ -22,7 +22,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Fill the ignored root `.env` with private values from the shared providers. Prisma, the API, the worker, and Next.js load it automatically; no `source .env` step is needed. Root `.env.local` has higher precedence, so remove stale local `DATABASE_URL`, `REDIS_URL`, and local-allow flags from that file before starting.
+Fill the ignored root `.env` with private application values from the shared providers. The API, worker, Next.js, and Prisma fallback load it automatically; no `source .env` step is needed. Leave `MIGRATION_DATABASE_URL` blank or absent there. Root `.env.local` has higher precedence, so remove stale local `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `REDIS_URL`, and local-allow flags from that file before starting.
 
 Use the same hosted values on the Mac and Windows PC for `DATABASE_URL`, `REDIS_URL`, Supabase server/public settings, Storage bucket, and Gemini. Keep these application URLs local on both machines:
 
@@ -32,7 +32,7 @@ NEXT_PUBLIC_ALLOW_LOCAL_API="true"
 WEB_ORIGIN="http://localhost:3000"
 ```
 
-Only `NEXT_PUBLIC_*` values are browser-visible. Never give `DATABASE_URL`, `REDIS_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or `GEMINI_API_KEY` a `NEXT_PUBLIC_` prefix.
+Only `NEXT_PUBLIC_*` values are browser-visible. Never give `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `REDIS_URL`, `SUPABASE_SERVICE_ROLE_KEY`, or `GEMINI_API_KEY` a `NEXT_PUBLIC_` prefix.
 
 Next.js uses `NODE_ENV=production` while building even for a local start. `NEXT_PUBLIC_ALLOW_LOCAL_API=true` records that localhost is intentional for this architecture. Set it to `false` before any future deployed build.
 
@@ -41,6 +41,8 @@ Next.js uses `NODE_ENV=production` while building even for a local start. `NEXT_
 Copy the exact Supabase PostgreSQL connection string from the intended project's **Connect** panel. The long-running local API and worker can use a valid direct port-5432 connection when the network supports it. On an IPv4-only network, use the Supavisor **Session pooler** on port `5432`. Do not guess its host or username, and do not use the transaction pooler on port `6543` for Prisma migrations.
 
 Database URLs are canonicalized before use, but passwords copied into URLs should still percent-encode reserved characters such as `@`, `#`, `/`, and `?`.
+
+`DATABASE_URL` is the least-privilege runtime connection shared by API and worker. `MIGRATION_DATABASE_URL` is a separate Prisma CLI connection for the same logical database using the migration owner. Keep the owner credential out of shared application `.env` files: inject it only into a dedicated migration process/job, run the deployment command, and remove it before that process can start the API or worker. When the override is absent or blank, Prisma falls back to `DATABASE_URL` for backward-compatible development; production with the hardened runtime role requires the process-only override.
 
 Copy the complete Redis Cloud URL, including credentials, port, and database path. API and worker must use the identical value. Development accepts either `redis://` or TLS-enabled `rediss://`; production requires canonical lowercase `rediss://` without a `tls` query override. Local PostgreSQL and Redis URLs are rejected by default; the `MEDVAULT_ALLOW_LOCAL_*` flags exist only for intentional optional tooling.
 
@@ -58,7 +60,8 @@ The shared Supabase project must contain a private bucket matching `SUPABASE_STO
 ## Run
 
 ```bash
-pnpm dev              # web :3000, API :4000, and worker
+# Starts web :3000, API :4000, and worker.
+pnpm dev
 pnpm --filter @medvault/web dev
 pnpm --filter @medvault/api dev
 pnpm --filter @medvault/worker dev

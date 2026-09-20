@@ -1,22 +1,42 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, Download, FileText, LoaderCircle, LockKeyhole, Pill } from "lucide-react";
-import type { DocumentDto } from "@medvault/shared";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  LoaderCircle,
+  LockKeyhole,
+  Pill,
+  Trash2,
+} from "lucide-react";
+import { documentResponseSchema, signedFileResponseSchema } from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
+import { signedFileRefreshInterval, validatedRequest } from "@/lib/phase2-api";
 import { formatDate } from "./document-card";
 import { StatusBadge } from "./status-badge";
 
 export function DocumentDetail({ id }: { id: string }) {
   const documentQuery = useQuery({
     queryKey: ["document", id],
-    queryFn: () => apiRequest<{ document: DocumentDto }>(`/v1/documents/${id}`),
+    queryFn: () => validatedRequest(documentResponseSchema, `/v1/documents/${id}`),
   });
   const fileQuery = useQuery({
     queryKey: ["file", id],
-    queryFn: () => apiRequest<{ url: string }>(`/v1/documents/${id}/file`),
-    refetchOnWindowFocus: false,
+    queryFn: () => validatedRequest(signedFileResponseSchema, `/v1/documents/${id}/file`),
+    refetchInterval: (query) => signedFileRefreshInterval(query.state.data?.expiresInSeconds),
+  });
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const deleteMutation = useMutation({
+    mutationFn: () => apiRequest(`/v1/documents/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      router.push("/documents");
+    },
   });
 
   if (documentQuery.isLoading) {
@@ -61,7 +81,25 @@ export function DocumentDetail({ id }: { id: string }) {
             </p>
           </div>
         </div>
-        <StatusBadge status={document.processingStatus} />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={document.processingStatus} />
+          <button
+            onClick={() => {
+              if (confirm("Are you sure you want to delete this document?")) {
+                deleteMutation.mutate();
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            className="button-secondary text-red-600 hover:bg-red-50 hover:border-red-200"
+            title="Delete document"
+          >
+            {deleteMutation.isPending ? (
+              <LoaderCircle className="animate-spin" size={16} />
+            ) : (
+              <Trash2 size={16} />
+            )}
+          </button>
+        </div>
       </div>
       {document.documentType === "PRESCRIPTION" && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl bg-[#edf4f1] p-4 text-sm text-[#36564e]">

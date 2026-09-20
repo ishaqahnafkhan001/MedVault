@@ -162,11 +162,19 @@ class FakeQueue implements ReportQueue {
     return Promise.resolve(this.state);
   }
 
+  checkHealth() {
+    return Promise.resolve();
+  }
+
   removeForDeletion(): Promise<"missing"> {
     return Promise.resolve("missing");
   }
 
   close() {
+    return Promise.resolve();
+  }
+
+  enqueueSummary() {
     return Promise.resolve();
   }
 }

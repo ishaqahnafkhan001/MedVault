@@ -15,6 +15,12 @@ export interface SafeEnvironmentTopology {
   api: EnvironmentLocation;
 }
 
+export interface PrismaDatabaseEnvironment {
+  databaseUrl: string;
+  allowLocalDatabase: boolean;
+  source: "MIGRATION_DATABASE_URL" | "DATABASE_URL";
+}
+
 const localHostnames = new Set([
   "localhost",
   "0.0.0.0",
@@ -93,6 +99,28 @@ export function validateDatabaseEnvironment(
   const allowLocalDatabase = allowSetting === "true";
   assertDatabaseLocationAllowed(databaseUrl, allowLocalDatabase);
   return { databaseUrl, allowLocalDatabase };
+}
+
+export function validatePrismaDatabaseEnvironment(
+  environment: EnvironmentRecord,
+): PrismaDatabaseEnvironment {
+  const migrationDatabaseUrl = environment.MIGRATION_DATABASE_URL?.trim();
+  const source = migrationDatabaseUrl ? "MIGRATION_DATABASE_URL" : "DATABASE_URL";
+  const selected = validateDatabaseEnvironment(
+    migrationDatabaseUrl ? { ...environment, DATABASE_URL: migrationDatabaseUrl } : environment,
+    "Prisma",
+  );
+  return { ...selected, source };
+}
+
+export function assertMigrationCredentialIsProcessOnly(
+  environment: EnvironmentRecord,
+  destination: string,
+): void {
+  if (!environment.MIGRATION_DATABASE_URL?.trim()) return;
+  throw new Error(
+    `MIGRATION_DATABASE_URL must be blank or absent in ${destination}; inject it only into a dedicated Prisma migration process.`,
+  );
 }
 
 export function validateRedisEnvironment(

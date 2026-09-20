@@ -1,0 +1,618 @@
+{
+  "projectRef": "ginzrzcgjmkrpkdywfds",
+  "scope": "Read-only metadata and aggregate counts. Not a backup, restore, Data API authenticated test or runtime credential test.",
+  "roles": [
+    {
+      "name": "anon",
+      "login": false,
+      "create_db": false,
+      "superuser": false,
+      "bypass_rls": false,
+      "create_role": false
+    },
+    {
+      "name": "authenticated",
+      "login": false,
+      "create_db": false,
+      "superuser": false,
+      "bypass_rls": false,
+      "create_role": false
+    },
+    {
+      "name": "postgres",
+      "login": true,
+      "create_db": true,
+      "superuser": false,
+      "bypass_rls": true,
+      "create_role": true
+    },
+    {
+      "name": "service_role",
+      "login": false,
+      "create_db": false,
+      "superuser": false,
+      "bypass_rls": true,
+      "create_role": false
+    }
+  ],
+  "database": "postgres",
+  "row_counts": {
+    "episodes": 1,
+    "patients": 6,
+    "intake_logs": 0,
+    "medications": 0,
+    "episode_analyses": 0,
+    "patient_profiles": 5,
+    "medical_documents": 7,
+    "_prisma_migrations": 1,
+    "report_extractions": 2,
+    "episode_memberships": 0,
+    "reminder_deliveries": 0,
+    "report_measurements": 0,
+    "medication_schedules": 0,
+    "schedule_occurrences": 0
+  },
+  "default_acl": [
+    {
+      "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+      "owner": "supabase_admin",
+      "schema": "public",
+      "object_type": "S"
+    },
+    {
+      "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+      "owner": "supabase_admin",
+      "schema": "public",
+      "object_type": "f"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+      "owner": "supabase_admin",
+      "schema": "public",
+      "object_type": "r"
+    },
+    {
+      "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+      "owner": "postgres",
+      "schema": "public",
+      "object_type": "S"
+    },
+    {
+      "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "schema": "public",
+      "object_type": "f"
+    },
+    {
+      "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "owner": "postgres",
+      "schema": "public",
+      "object_type": "r"
+    }
+  ],
+  "server_version": "17.6",
+  "captured_at_utc": "2026-09-10 19:35:01",
+  "inspection_role": "postgres",
+  "integrity_counts": {
+    "empty_storage_path": 0,
+    "duplicate_auth_mapping": 0,
+    "analysis_missing_parent": 0,
+    "episode_missing_patient": 0,
+    "intake_patient_mismatch": 0,
+    "profile_missing_patient": 0,
+    "document_missing_patient": 0,
+    "delivery_patient_mismatch": 0,
+    "intake_missing_occurrence": 0,
+    "membership_missing_parent": 0,
+    "patient_missing_auth_user": 0,
+    "schedule_patient_mismatch": 0,
+    "medication_missing_patient": 0,
+    "delivery_missing_occurrence": 0,
+    "extraction_missing_document": 0,
+    "extraction_version_mismatch": 0,
+    "occurrence_missing_schedule": 0,
+    "occurrence_patient_mismatch": 0,
+    "schedule_missing_medication": 0,
+    "measurement_missing_extraction": 0,
+    "episode_member_patient_mismatch": 0,
+    "document_missing_storage_metadata": 0,
+    "episode_analysis_patient_mismatch": 0,
+    "storage_metadata_orphan_candidate": 3,
+    "foreign_or_wrong_type_prescription_link": 0
+  },
+  "public_relations": [
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "_prisma_migrations",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "episode_analyses",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "episode_memberships",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "episodes",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "intake_logs",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "medical_documents",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "medication_schedules",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "medications",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "patient_profiles",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "patients",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "reminder_deliveries",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "report_extractions",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "report_measurements",
+      "owner": "postgres",
+      "force_rls": false
+    },
+    {
+      "rls": false,
+      "kind": "r",
+      "name": "schedule_occurrences",
+      "owner": "postgres",
+      "force_rls": false
+    }
+  ],
+  "migration_history": [
+    {
+      "name": "20260807000000_initial",
+      "checksum": "b7bf19338333b70fdba8ecaf3906b362824bc0389124964c7cf69d687f19cf32",
+      "finished": true,
+      "rolled_back": false,
+      "applied_steps": 1
+    }
+  ],
+  "public_policy_count": 0,
+  "public_routine_count": 0,
+  "summary_table_exists": false,
+  "private_schema_exists": false,
+  "storage_bucket_private": true,
+  "public_user_trigger_count": 0,
+  "effective_table_privileges": [
+    {
+      "role": "anon",
+      "table": "_prisma_migrations",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "episode_analyses",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "episode_memberships",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "episodes",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "intake_logs",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "medical_documents",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "medication_schedules",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "medications",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "patient_profiles",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "patients",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "reminder_deliveries",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "report_extractions",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "report_measurements",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "anon",
+      "table": "schedule_occurrences",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "_prisma_migrations",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "episode_analyses",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "episode_memberships",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "episodes",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "intake_logs",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "medical_documents",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "medication_schedules",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "medications",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "patient_profiles",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "patients",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "reminder_deliveries",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "report_extractions",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "report_measurements",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "authenticated",
+      "table": "schedule_occurrences",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "_prisma_migrations",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "episode_analyses",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "episode_memberships",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "episodes",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "intake_logs",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "medical_documents",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "medication_schedules",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "medications",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "patient_profiles",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "patients",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "reminder_deliveries",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "report_extractions",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "report_measurements",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    },
+    {
+      "role": "service_role",
+      "table": "schedule_occurrences",
+      "delete": true,
+      "insert": true,
+      "select": true,
+      "update": true,
+      "truncate": true
+    }
+  ]
+}

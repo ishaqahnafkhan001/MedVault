@@ -7,20 +7,33 @@ import {
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
+  FileX2,
   LoaderCircle,
   RefreshCw,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
-import type { ReportCategory, ReportDetailDto, VerifyReportInput } from "@medvault/shared";
+import { useRouter } from "next/navigation";
+import {
+  formatClinicalDate,
+  documentResponseSchema,
+  reportDetailResponseSchema,
+  signedFileResponseSchema,
+  verifyReportSchema,
+  type ReportCategory,
+  type ReportDetailDto,
+  type VerifyReportInput,
+} from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
-import { formatDate } from "./document-card";
+import { signedFileRefreshInterval, validatedRequest } from "@/lib/phase2-api";
 import { StatusBadge } from "./status-badge";
+import { SummaryPanel } from "./summary-panel";
 
 export function ReportReview({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const reportQuery = useQuery({
     queryKey: ["report", id],
-    queryFn: () => apiRequest<{ report: ReportDetailDto }>(`/v1/reports/${id}`),
+    queryFn: () => validatedRequest(reportDetailResponseSchema, `/v1/reports/${id}`),
     refetchInterval: (q) =>
       q.state.data &&
       ["UPLOADED", "QUEUED", "PROCESSING"].includes(q.state.data.report.processingStatus)
@@ -29,16 +42,34 @@ export function ReportReview({ id }: { id: string }) {
   });
   const fileQuery = useQuery({
     queryKey: ["file", id],
-    queryFn: () => apiRequest<{ url: string }>(`/v1/documents/${id}/file`),
-    refetchOnWindowFocus: false,
+    queryFn: () => validatedRequest(signedFileResponseSchema, `/v1/documents/${id}/file`),
+    refetchInterval: (query) => signedFileRefreshInterval(query.state.data?.expiresInSeconds),
+  });
+  const replacementDocumentQuery = useQuery({
+    queryKey: ["document", id, "report-replacement"],
+    queryFn: () => validatedRequest(documentResponseSchema, `/v1/documents/${id}`),
+    enabled: reportQuery.isError,
+    retry: false,
+  });
+  const router = useRouter();
+  const deleteMutation = useMutation({
+    mutationFn: () => apiRequest(`/v1/documents/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["reports"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["episode"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary"] });
+      router.push("/documents");
+    },
   });
   const [form, setForm] = useState<VerifyReportInput | null>(null);
   useEffect(() => {
     const r = reportQuery.data?.report;
-    if (r && r.processingStatus === "NEEDS_REVIEW" && !form && r.documentDate) {
+    if (r && ["NEEDS_REVIEW", "VERIFIED"].includes(r.processingStatus) && !form) {
       setForm({
         testName: r.testName ?? "",
-        reportDate: r.documentDate,
+        reportDate: r.documentDate ?? "",
         hospitalName: r.hospitalName,
         category: r.category ?? "OTHER",
         measurements: r.measurements.map((m) => ({
@@ -56,17 +87,25 @@ export function ReportReview({ id }: { id: string }) {
   }, [reportQuery.data, form]);
   const verify = useMutation({
     mutationFn: (body: VerifyReportInput) =>
-      apiRequest<{ report: ReportDetailDto }>(`/v1/reports/${id}/verify`, {
+      validatedRequest(reportDetailResponseSchema, `/v1/reports/${id}/verify`, {
         method: "PUT",
         body: JSON.stringify(body),
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["report", id], data);
       void queryClient.invalidateQueries({ queryKey: ["report", id] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["episode"] });
+      void queryClient.invalidateQueries({ queryKey: ["summary"] });
+      setForm(null);
     },
   });
   const retry = useMutation({
     mutationFn: () => apiRequest(`/v1/reports/${id}/retry`, { method: "POST" }),
+    onSuccess: () => void reportQuery.refetch(),
+  });
+  const cancel = useMutation({
+    mutationFn: () => apiRequest(`/v1/reports/${id}/cancel`, { method: "POST" }),
     onSuccess: () => void reportQuery.refetch(),
   });
   if (reportQuery.isLoading)
@@ -75,7 +114,25 @@ export function ReportReview({ id }: { id: string }) {
         <LoaderCircle className="animate-spin text-[#176c5b]" />
       </div>
     );
-  if (reportQuery.isError || !reportQuery.data)
+  if (reportQuery.isError) {
+    if (replacementDocumentQuery.isLoading) {
+      return (
+        <div className="grid min-h-[60vh] place-items-center">
+          <LoaderCircle className="animate-spin text-[#176c5b]" />
+        </div>
+      );
+    }
+    if (replacementDocumentQuery.data?.document.documentType === "PRESCRIPTION") {
+      return <PrescriptionStoredMessage documentId={id} />;
+    }
+    return (
+      <Message
+        title="Report unavailable"
+        text="This report may not exist or you may not have access."
+      />
+    );
+  }
+  if (!reportQuery.data)
     return (
       <Message
         title="Report unavailable"
@@ -97,33 +154,50 @@ export function ReportReview({ id }: { id: string }) {
           <p className="eyebrow">Medical report</p>
           <h1 className="page-title mt-2">{report.testName || report.originalFilename}</h1>
           <p className="muted mt-2">
-            {report.documentDate ? formatDate(report.documentDate) : "Report date not extracted"}
+            {report.documentDate
+              ? formatClinicalDate(report.documentDate)
+              : "Report date not extracted"}
             {report.hospitalName ? ` · ${report.hospitalName}` : ""}
           </p>
         </div>
-        <StatusBadge status={report.processingStatus} />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={report.processingStatus} />
+          <button
+            onClick={() => {
+              if (confirm("Are you sure you want to delete this report?")) {
+                deleteMutation.mutate();
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            className="button-secondary text-red-600 hover:bg-red-50 hover:border-red-200"
+            title="Delete report"
+          >
+            {deleteMutation.isPending ? (
+              <LoaderCircle className="animate-spin" size={16} />
+            ) : (
+              <Trash2 size={16} />
+            )}
+          </button>
+        </div>
       </div>
       {["UPLOADED", "QUEUED", "PROCESSING"].includes(report.processingStatus) && (
-        <Message
-          title="Processing with AI…"
-          text="Your report is stored safely. You can leave this page; extraction continues in the background."
-          loading
+        <ProcessingCard
+          status={report.processingStatus as ProcessingStatus}
+          uploadedAt={report.uploadedAt}
+          onStop={() => cancel.mutate()}
+          stopping={cancel.isPending}
+          onRequeue={() => retry.mutate()}
+          requeueing={retry.isPending}
         />
       )}
       {report.processingStatus === "FAILED" && (
-        <div className="surface mt-8 rounded-2xl p-7 text-center">
-          <RefreshCw className="mx-auto text-[#a63d40]" />
-          <h2 className="mt-3 text-xl font-extrabold">We couldn’t process this report</h2>
-          <p className="muted mt-2 text-sm">The original file is safe. Try the extraction again.</p>
-          <button
-            className="button-primary mt-5"
-            disabled={retry.isPending}
-            onClick={() => retry.mutate()}
-          >
-            {retry.isPending && <LoaderCircle size={16} className="animate-spin" />}Retry processing
-          </button>
-        </div>
+        <FailureMessage
+          failureCode={report.failureCode}
+          onRetry={() => retry.mutate()}
+          retrying={retry.isPending}
+        />
       )}
+
       {(report.processingStatus === "NEEDS_REVIEW" || report.processingStatus === "VERIFIED") && (
         <>
           <div
@@ -177,7 +251,7 @@ export function ReportReview({ id }: { id: string }) {
                   ? "Verified information"
                   : "Review extracted information"}
               </h2>
-              {report.processingStatus === "NEEDS_REVIEW" && form ? (
+              {form ? (
                 <ReviewForm
                   form={form}
                   setForm={setForm}
@@ -190,6 +264,12 @@ export function ReportReview({ id }: { id: string }) {
               )}
             </section>
           </div>
+          <SummaryPanel
+            scope="REPORT"
+            id={id}
+            eligible={report.processingStatus === "VERIFIED"}
+            sourceLinks={[{ id, label: "View source report" }]}
+          />
         </>
       )}
     </div>
@@ -223,6 +303,7 @@ function ReviewForm({
           <input
             className="field"
             type="date"
+            required
             value={form.reportDate}
             onChange={(e) => setForm({ ...form, reportDate: e.target.value })}
           />
@@ -333,7 +414,16 @@ function ReviewForm({
         ))}
       </div>
       {error && <p className="mt-4 rounded-xl bg-[#f8e4e4] p-3 text-sm text-[#963e42]">{error}</p>}
-      <button onClick={save} disabled={saving} className="button-primary mt-6 w-full">
+      {!form.reportDate && (
+        <p className="mt-4 text-sm">
+          Enter the report date from your document before verification.
+        </p>
+      )}
+      <button
+        onClick={save}
+        disabled={saving || !verifyReportSchema.safeParse(form).success}
+        className="button-primary mt-6 w-full"
+      >
         {saving && <LoaderCircle className="animate-spin" size={17} />}Verify &amp; Save
       </button>
     </div>
@@ -346,7 +436,7 @@ function VerifiedData({ report }: { report: ReportDetailDto }) {
         <Info label="Test" value={report.testName} />
         <Info
           label="Report date"
-          value={report.documentDate ? formatDate(report.documentDate) : null}
+          value={report.documentDate ? formatClinicalDate(report.documentDate) : null}
         />
         <Info label="Hospital" value={report.hospitalName} />
         <Info label="Category" value={report.category?.replaceAll("_", " ")} />
@@ -389,12 +479,308 @@ function Info({ label, value }: { label: string; value: string | null | undefine
     </div>
   );
 }
-function Message({ title, text, loading }: { title: string; text: string; loading?: boolean }) {
+
+type ProcessingStatus = "UPLOADED" | "QUEUED" | "PROCESSING";
+
+const PROCESSING_STAGES: { status: ProcessingStatus[]; label: string; sub: string }[] = [
+  { status: ["UPLOADED", "QUEUED"], label: "Queued", sub: "Waiting for an available worker…" },
+  { status: ["PROCESSING"], label: "Preparing", sub: "Downloading your report securely…" },
+  { status: ["PROCESSING"], label: "Extracting", sub: "AI is reading your medical data…" },
+  { status: ["PROCESSING"], label: "Finalizing", sub: "Structuring results for review…" },
+];
+
+function ProcessingCard({
+  status,
+  uploadedAt,
+  onStop,
+  stopping,
+  onRequeue,
+  requeueing,
+}: {
+  status: ProcessingStatus;
+  uploadedAt: string;
+  onStop: () => void;
+  stopping: boolean;
+  onRequeue: () => void;
+  requeueing: boolean;
+}) {
+  const [tick, setTick] = useState(0);
+  const [elapsed, setElapsed] = useState(() => Date.now() - new Date(uploadedAt).getTime());
+  useEffect(() => {
+    if (status !== "PROCESSING") return;
+    const id = setInterval(() => setTick((t) => (t + 1) % 3), 2200);
+    return () => clearInterval(id);
+  }, [status]);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - new Date(uploadedAt).getTime()), 5000);
+    return () => clearInterval(id);
+  }, [uploadedAt]);
+
+  const looksStuck = elapsed > 90_000; // 90 seconds
+
+  const activeStageIndex = status === "PROCESSING" ? 1 + tick : 0;
+  const activeStage = PROCESSING_STAGES[activeStageIndex];
+  const progressPct = status === "QUEUED" || status === "UPLOADED" ? 5 : 20 + tick * 28;
+
+  return (
+    <div className="surface mt-8 overflow-hidden rounded-2xl">
+      {/* Indeterminate shimmer bar across the top */}
+      <div className="relative h-1 w-full overflow-hidden bg-[#dde9e4]">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#176c5b] via-[#29a587] to-[#176c5b] transition-all duration-700 ease-in-out"
+          style={{ width: `${progressPct}%` }}
+        />
+        {status === "PROCESSING" && (
+          <div
+            className="absolute inset-y-0 w-1/3 animate-[shimmer_1.8s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+            style={{ animationDelay: "0.4s" }}
+          />
+        )}
+      </div>
+
+      <div className="px-8 py-7">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e4f2ec]">
+            <LoaderCircle className="animate-spin text-[#176c5b]" size={18} />
+          </span>
+          <div className="text-left">
+            <p className="text-sm font-extrabold text-[#176c5b]">{activeStage?.label}</p>
+            <p className="muted text-xs">{activeStage?.sub}</p>
+          </div>
+        </div>
+
+        {/* Stage dots */}
+        <div className="mb-5 flex items-center gap-2">
+          {PROCESSING_STAGES.map((stage, i) => {
+            const done = i < activeStageIndex;
+            const active = i === activeStageIndex;
+            return (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  className={`h-1.5 w-full rounded-full transition-all duration-700 ${
+                    done ? "bg-[#176c5b]" : active ? "bg-[#29a587]" : "bg-[#dde9e4]"
+                  }`}
+                />
+                <p
+                  className={`text-[10px] font-bold transition-colors duration-300 ${
+                    done || active ? "text-[#176c5b]" : "text-[#b0bdb9]"
+                  }`}
+                >
+                  {stage.label}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {looksStuck && (
+          <div className="mb-4 rounded-xl bg-[#fff8ec] p-3 text-center text-xs text-[#75501f]">
+            This is taking longer than expected. The job may have been dropped — try re-queuing it.
+          </div>
+        )}
+
+        <p className="muted text-center text-xs">
+          You can safely leave this page — extraction continues in the background.
+        </p>
+
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          {looksStuck && (
+            <button className="button-primary" disabled={requeueing} onClick={onRequeue}>
+              {requeueing ? (
+                <>
+                  <LoaderCircle size={15} className="animate-spin" /> Re-queuing…
+                </>
+              ) : (
+                "Re-queue"
+              )}
+            </button>
+          )}
+          <button className="button-secondary" disabled={stopping} onClick={onStop}>
+            {stopping ? (
+              <>
+                <LoaderCircle size={15} className="animate-spin" /> Stopping…
+              </>
+            ) : (
+              "Stop extraction"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Message({
+  title,
+  text,
+  loading,
+  children,
+}: {
+  title: string;
+  text: string;
+  loading?: boolean;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="surface mt-8 rounded-2xl p-8 text-center">
       {loading && <LoaderCircle className="mx-auto animate-spin text-[#176c5b]" />}
       <h2 className="mt-3 text-xl font-extrabold">{title}</h2>
       <p className="muted mx-auto mt-2 max-w-lg text-sm">{text}</p>
+      {children}
+    </div>
+  );
+}
+
+export function PrescriptionStoredMessage({ documentId }: { documentId: string }) {
+  return (
+    <div className="mt-8 rounded-2xl bg-[#e4f2ec] p-7 text-center text-[#176c5b]">
+      <h2 className="text-xl font-extrabold">Prescription saved</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm">
+        This upload was identified as a prescription and stored privately. It was not sent through
+        report extraction.
+      </p>
+      <div className="mt-5 flex flex-wrap justify-center gap-3">
+        <Link href={`/documents/${documentId}`} className="button-primary">
+          View stored document
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function FailureMessage({
+  failureCode,
+  onRetry,
+  retrying,
+}: {
+  failureCode: string | null;
+  onRetry: () => void;
+  retrying: boolean;
+}) {
+  if (failureCode === "UNRELATED_IMAGE" || failureCode === "NOT_A_MEDICAL_DOCUMENT") {
+    return (
+      <div className="surface mt-8 rounded-2xl p-7 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fdf0dc]">
+          <FileX2 className="text-[#aa6912]" size={28} />
+        </div>
+        <h2 className="text-xl font-extrabold">Unrelated image</h2>
+        <p className="muted mx-auto mt-2 max-w-md text-sm">
+          We could not identify a medical test report or prescription in this upload. Analysis was
+          not started. Please upload a clear photo or PDF of your medical document.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/documents/upload" className="button-primary">
+            Upload another document
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (failureCode === "UNREADABLE_DOCUMENT") {
+    return (
+      <div className="surface mt-8 rounded-2xl p-7 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fdf0dc]">
+          <FileX2 className="text-[#aa6912]" size={28} />
+        </div>
+        <h2 className="text-xl font-extrabold">Unreadable document</h2>
+        <p className="muted mx-auto mt-2 max-w-md text-sm">
+          We could not read this document clearly enough to process it. Please upload a sharper,
+          complete image with all text visible.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/documents/upload" className="button-primary">
+            Upload another document
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (failureCode === "UNSUPPORTED_MEDICAL") {
+    return (
+      <div className="surface mt-8 rounded-2xl p-7 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fdf0dc]">
+          <FileX2 className="text-[#aa6912]" size={28} />
+        </div>
+        <h2 className="text-xl font-extrabold">Unsupported medical content</h2>
+        <p className="muted mx-auto mt-2 max-w-md text-sm">
+          This appears to be a medical document, but this type is not supported for analysis yet.
+          Please upload a supported test report.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/documents/upload" className="button-primary">
+            Upload another document
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (failureCode === "PRESCRIPTION_STORED") {
+    return (
+      <div className="mt-8 rounded-2xl bg-[#e4f2ec] p-7 text-center text-[#176c5b]">
+        <h2 className="text-xl font-extrabold">Prescription Saved</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm">
+          Your prescription has been saved securely. AI report analysis is available for test
+          reports only; prescriptions are not analyzed.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/reports" className="button-primary">
+            Back to reports
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (failureCode === "CATEGORY_MISMATCH") {
+    return (
+      <div className="surface mt-8 rounded-2xl p-7 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fdf0dc]">
+          <FileX2 className="text-[#aa6912]" size={28} />
+        </div>
+        <h2 className="text-xl font-extrabold">Category mismatch</h2>
+        <p className="muted mx-auto mt-2 max-w-md text-sm">
+          This appears to be a prescription, but you selected Test Report. Please correct the
+          document type to continue.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/documents/upload" className="button-primary">
+            Upload another document
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (failureCode === "AI_UNAVAILABLE" || failureCode === "QUEUE_UNAVAILABLE") {
+    return (
+      <div className="surface mt-8 rounded-2xl p-7 text-center">
+        <RefreshCw className="mx-auto text-[#aa6912]" />
+        <h2 className="mt-3 text-xl font-extrabold">Checker unavailable</h2>
+        <p className="muted mx-auto mt-2 max-w-md text-sm">
+          We could not check your document because the checking service is temporarily unavailable.
+          Your file has not been rejected. Please try again later.
+        </p>
+        <button className="button-primary mt-5" disabled={retrying} onClick={onRetry}>
+          {retrying && <LoaderCircle size={16} className="animate-spin" />}Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="surface mt-8 rounded-2xl p-7 text-center">
+      <RefreshCw className="mx-auto text-[#a63d40]" />
+      <h2 className="mt-3 text-xl font-extrabold">Analysis failure</h2>
+      <p className="muted mx-auto mt-2 max-w-md text-sm">
+        Your document passed the initial check, but analysis could not be completed. Please retry.
+        Your uploaded file is still available.
+      </p>
+      <button className="button-primary mt-5" disabled={retrying} onClick={onRetry}>
+        {retrying && <LoaderCircle size={16} className="animate-spin" />}Retry processing
+      </button>
     </div>
   );
 }

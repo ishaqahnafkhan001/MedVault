@@ -142,6 +142,10 @@ class FakeStorage implements PrivateStorage {
   fail = false;
   objectMissing = false;
 
+  checkHealth() {
+    return Promise.resolve();
+  }
+
   upload() {
     return Promise.resolve();
   }
@@ -180,12 +184,20 @@ class FakeQueue implements ReportQueue {
     return Promise.resolve("missing" as const);
   }
 
+  checkHealth() {
+    return Promise.resolve();
+  }
+
   removeForDeletion(data: ReportJobData) {
     this.removed.push(data);
     return Promise.resolve(this.removal);
   }
 
   close() {
+    return Promise.resolve();
+  }
+
+  enqueueSummary() {
     return Promise.resolve();
   }
 }

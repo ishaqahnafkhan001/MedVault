@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { AppError } from "../errors.js";
 
 export interface PrivateStorage {
+  checkHealth(): Promise<void>;
   upload(path: string, bytes: Buffer, mimeType: string): Promise<void>;
   createSignedUrl(path: string, ttlSeconds: number): Promise<string>;
   remove(path: string): Promise<void>;
@@ -18,6 +19,13 @@ export class SupabasePrivateStorage implements PrivateStorage {
     this.client = createClient(url, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
+  }
+
+  async checkHealth(): Promise<void> {
+    const { data, error } = await this.client.storage.getBucket(this.bucket);
+    if (error || !data || data.public) {
+      throw new AppError(503, "STORAGE_UNAVAILABLE", "Private file storage is unavailable.");
+    }
   }
 
   async upload(path: string, bytes: Buffer, mimeType: string): Promise<void> {

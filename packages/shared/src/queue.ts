@@ -7,6 +7,11 @@ export const reportJobDataSchema = z
   .object({
     documentId: z.uuid(),
     documentVersion: z.number().int().positive(),
+    correlationId: z
+      .string()
+      .regex(/^[A-Za-z0-9._:-]+$/)
+      .max(100)
+      .optional(),
   })
   .strict();
 

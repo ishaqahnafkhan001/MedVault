@@ -56,6 +56,10 @@ model Patient {
   updatedAt  DateTime          @updatedAt @map("updated_at")
   profile    PatientProfile?
   documents  MedicalDocument[]
+  episodes   Episode[]
+  analyses   EpisodeAnalysis[]
+  medications Medication[]
+  summaries MedicalSummary[]
 
   @@map("patients")
 }
@@ -102,8 +106,11 @@ model MedicalDocument {
   uploadedAt          DateTime           @default(now()) @map("uploaded_at")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
-  patient             Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient             Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
   extraction          ReportExtraction?
+  episodeMemberships  EpisodeMembership[]
+  medicationLinks     Medication[]
+  summaries           MedicalSummary[]
 
   @@index([patientId, createdAt(sort: Desc)])
   @@index([patientId, documentType, processingStatus])
@@ -163,4 +170,242 @@ model ReportMeasurement {
 
   @@unique([extractionId, sortOrder])
   @@map("report_measurements")
+}
+
+model Episode {
+  id          String             @id @default(uuid()) @db.Uuid
+  patientId   String             @map("patient_id") @db.Uuid
+  title       String             @db.VarChar(120)
+  startDate   DateTime?          @map("start_date") @db.Date
+  endDate     DateTime?          @map("end_date") @db.Date
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  patient     Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  memberships EpisodeMembership[]
+  analyses    EpisodeAnalysis[]
+  summaries   MedicalSummary[]
+
+  @@index([patientId, startDate(sort: Desc)])
+  @@map("episodes")
+}
+
+model EpisodeMembership {
+  episodeId   String           @map("episode_id") @db.Uuid
+  documentId  String           @map("document_id") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at")
+  episode     Episode          @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  document    MedicalDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([episodeId, documentId])
+  @@map("episode_memberships")
+}
+
+model EpisodeAnalysis {
+  id               String    @id @default(uuid()) @db.Uuid
+  episodeId        String    @map("episode_id") @db.Uuid
+  patientId        String    @map("patient_id") @db.Uuid
+  status           String    @db.VarChar(40)
+  summaryText      String?   @map("summary_text") @db.Text
+  provider         String    @db.VarChar(40)
+  model            String    @db.VarChar(120)
+  promptVersion    String    @map("prompt_version") @db.VarChar(40)
+  sourceVersions   Json      @map("source_versions")
+  inputFingerprint String?   @map("input_fingerprint") @db.Char(64)
+  analyzedAt       DateTime? @map("analyzed_at")
+  failureCode      String?   @map("failure_code") @db.VarChar(80)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  episode          Episode   @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  patient          Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([episodeId, createdAt(sort: Desc)])
+  @@index([episodeId, inputFingerprint])
+  @@map("episode_analyses")
+}
+
+// Phase 2 summaries share one lifecycle without creating hidden episodes for reports.
+model MedicalSummary {
+  id               String    @id @default(uuid()) @db.Uuid
+  patientId        String    @map("patient_id") @db.Uuid
+  scopeKey         String    @unique @map("scope_key") @db.VarChar(80)
+  episodeId        String?   @map("episode_id") @db.Uuid
+  documentId       String?   @map("document_id") @db.Uuid
+  inputFingerprint String    @map("input_fingerprint") @db.Char(64)
+  sourceSnapshot   Json      @map("source_snapshot")
+  status           String    @db.VarChar(40)
+  result           Json?
+  model            String    @db.VarChar(120)
+  provider         String    @default("google") @db.VarChar(40)
+  promptVersion    String    @map("prompt_version") @db.VarChar(80)
+  generation       Int       @default(1)
+  attempts         Int       @default(0)
+  correlationId    String    @map("correlation_id") @db.Uuid
+  claimToken       String?   @map("claim_token") @db.Uuid
+  leaseUntil       DateTime? @map("lease_until")
+  failureCode      String?   @map("failure_code") @db.VarChar(80)
+  analyzedAt       DateTime? @map("analyzed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  patient          Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  episode          Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  document         MedicalDocument? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@map("medical_summaries")
+}
+
+// ── Medication module ─────────────────────────────────────────────────────────
+
+enum MedicationStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  DISCONTINUED
+  ARCHIVED
+}
+
+model Medication {
+  id               String           @id @default(uuid()) @db.Uuid
+  patientId        String           @map("patient_id") @db.Uuid
+  // User-entered name preserved verbatim
+  name             String           @db.VarChar(200)
+  // Optional resolved generic/active ingredient; null when resolution fails
+  resolvedGeneric  String?          @map("resolved_generic") @db.VarChar(200)
+  resolvedStatus   String           @map("resolved_status") @default("UNRESOLVED") @db.VarChar(40)
+  // Strength and dose stored separately
+  strength         String?          @db.VarChar(80)
+  doseAmount       String?          @map("dose_amount") @db.VarChar(80)
+  doseUnit         String?          @map("dose_unit") @db.VarChar(40)
+  formulation      String?          @db.VarChar(80)
+  route            String?          @db.VarChar(80)
+  startDate        DateTime?        @map("start_date") @db.Date
+  endDate          DateTime?        @map("end_date") @db.Date
+  status           MedicationStatus @default(ACTIVE)
+  notes            String?          @db.Text
+  // Optional link to prescription owned by same patient
+  prescriptionId   String?          @map("prescription_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  patient          Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  prescription     MedicalDocument? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
+  schedules        MedicationSchedule[]
+
+  @@index([patientId, status])
+  @@map("medications")
+}
+
+enum ScheduleFrequency {
+  ONCE_DAILY
+  TWICE_DAILY
+  THREE_TIMES_DAILY
+  FOUR_TIMES_DAILY
+  EVERY_X_HOURS
+  AS_NEEDED
+  CUSTOM
+}
+
+enum MealTiming {
+  BEFORE_MEAL
+  WITH_MEAL
+  AFTER_MEAL
+  NOT_SPECIFIED
+}
+
+model MedicationSchedule {
+  id                 String             @id @default(uuid()) @db.Uuid
+  medicationId       String             @map("medication_id") @db.Uuid
+  patientId          String             @map("patient_id") @db.Uuid
+  // Version incremented on every schedule edit so old occurrences retain original meaning
+  version            Int                @default(1)
+  frequency          ScheduleFrequency
+  // JSON array of HH:mm strings in local time, e.g. ["08:00", "20:00"]
+  administrationTimes Json             @map("administration_times")
+  mealTiming         MealTiming         @default(NOT_SPECIFIED) @map("meal_timing")
+  ianaTimezone       String             @map("iana_timezone") @db.VarChar(80)
+  startDate          DateTime           @map("start_date") @db.Date
+  endDate            DateTime?          @map("end_date") @db.Date
+  // Stock tracking for refill reminders (optional)
+  stockCount         Int?               @map("stock_count")
+  refillAlertAt      Int?               @map("refill_alert_at")
+  active             Boolean            @default(true)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  medication         Medication         @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  occurrences        ScheduleOccurrence[]
+
+  @@index([medicationId])
+  @@index([patientId, active, startDate])
+  @@map("medication_schedules")
+}
+
+enum OccurrenceStatus {
+  SCHEDULED
+  DUE
+  OVERDUE
+  TAKEN
+  SKIPPED
+  CANCELLED
+}
+
+model ScheduleOccurrence {
+  id             String             @id @default(uuid()) @db.Uuid
+  scheduleId     String             @map("schedule_id") @db.Uuid
+  patientId      String             @map("patient_id") @db.Uuid
+  // scheduleVersion at time of generation — for stale-job detection
+  scheduleVersion Int               @map("schedule_version")
+  // Due instant in UTC
+  dueAt          DateTime           @map("due_at")
+  // Local-time representation preserved for display
+  localTimeStr   String             @map("local_time_str") @db.VarChar(20)
+  status         OccurrenceStatus   @default(SCHEDULED)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  schedule       MedicationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  intakeLogs     IntakeLog[]
+  reminders      ReminderDelivery[]
+
+  @@unique([scheduleId, dueAt])
+  @@index([patientId, dueAt])
+  @@index([scheduleId, status])
+  @@map("schedule_occurrences")
+}
+
+model IntakeLog {
+  id           String             @id @default(uuid()) @db.Uuid
+  occurrenceId String             @map("occurrence_id") @db.Uuid
+  patientId    String             @map("patient_id") @db.Uuid
+  action       String             @db.VarChar(20)
+  // Actual time patient logged the action (UTC)
+  loggedAt     DateTime           @map("logged_at")
+  notes        String?            @db.VarChar(500)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  occurrence   ScheduleOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  @@index([occurrenceId])
+  @@index([patientId, loggedAt(sort: Desc)])
+  @@map("intake_logs")
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model ReminderDelivery {
+  id           String             @id @default(uuid()) @db.Uuid
+  occurrenceId String             @map("occurrence_id") @db.Uuid
+  patientId    String             @map("patient_id") @db.Uuid
+  channel      String             @db.VarChar(40)
+  status       DeliveryStatus     @default(PENDING)
+  attemptedAt  DateTime?          @map("attempted_at")
+  failureCode  String?            @map("failure_code") @db.VarChar(80)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  occurrence   ScheduleOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  @@index([occurrenceId])
+  @@index([patientId, status])
+  @@map("reminder_deliveries")
 }

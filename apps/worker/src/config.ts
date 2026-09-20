@@ -1,4 +1,6 @@
 import {
+  DEFAULT_GEMINI_MODEL,
+  assertMigrationCredentialIsProcessOnly,
   isServiceUrl,
   validateDatabaseEnvironment,
   validateRedisEnvironment,
@@ -24,7 +26,7 @@ const workerConfigSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   SUPABASE_STORAGE_BUCKET: z.string().min(1).default("medical-documents"),
   GEMINI_API_KEY: z.string().default(""),
-  GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
+  GEMINI_MODEL: z.string().trim().min(1).default(DEFAULT_GEMINI_MODEL),
   REPORT_QUEUE_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(2),
   NEXT_PUBLIC_API_URL: serviceUrl(["http", "https"], "HTTP(S)").optional(),
   SENTRY_DSN: z.string().optional(),
@@ -34,6 +36,7 @@ const workerConfigSchema = z.object({
 export type WorkerConfig = z.infer<typeof workerConfigSchema>;
 
 export function loadWorkerConfig(environment: NodeJS.ProcessEnv = process.env): WorkerConfig {
+  assertMigrationCredentialIsProcessOnly(environment, "the worker application environment");
   const result = workerConfigSchema.safeParse(environment);
   if (!result.success) {
     const issues = result.error.issues.map(
