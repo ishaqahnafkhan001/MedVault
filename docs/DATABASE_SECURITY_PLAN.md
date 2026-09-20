@@ -1,6 +1,23 @@
 # Database Security Plan
 
-This plan describes the intended hosted-database security posture. No grant, schema, policy, or hosted row was changed during the 2026-09-02 centralized-development audit. The plan has not yet been applied because it is an authorization-gated external database operation and the Prisma runtime-role behavior must be proven first.
+This plan describes the intended hosted-database security posture. No grant, schema, policy, or hosted row was changed during the 2026-09-02 centralized-development audit or the EX-02 local rehearsal. Hosted application remains gated by durable recovery-key custody, fresh target evidence and a controlled mutation checkpoint; Prisma runtime-role behavior is now proven only on the isolated restore.
+
+## EX-02 rehearsal checkpoint — 2026-09-18 UTC
+
+The exact application-object change is now versioned as `20260919000000_harden_application_database_access` and passed an isolated PostgreSQL 17 rehearsal after the truthful capture-history resolution and additive summary migration. **It has not been applied to hosted PostgreSQL.** The protected restore is stopped, retained outside Git and recorded with zero bad page checksums.
+
+The migration:
+
+- creates `medvault_runtime` as `NOLOGIN`, `NOSUPERUSER`, `NOINHERIT`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION`, `BYPASSRLS`; no password or login capability is stored in Git;
+- grants only `SELECT`, `INSERT`, `UPDATE` and `DELETE` on the 14 application tables, excluding `_prisma_migrations`, and denies public-schema object creation;
+- revokes all application/history table privileges from `PUBLIC`, `anon`, `authenticated` and `service_role`, including effective column access;
+- enables RLS on all 15 application/history tables without adding a permissive policy;
+- removes future table/sequence/function Data API grants from the `postgres` application migration owner's public-schema defaults while deliberately leaving provider-managed `supabase_admin` defaults unchanged;
+- keeps the invoker trigger function private from Data API roles. The trigger ran successfully under the application role during both raw SQL and Prisma rehearsals.
+
+The local checks proved all four exact migration checksums/history states, preserved all pre-existing counts and 22 application-integrity aggregates, denied table queries after `SET ROLE` for all three Data API roles, exercised DML across all 14 application tables, rejected runtime migration-table/DDL/TRUNCATE access, and completed a `SummaryStore` request/claim/publication/reload/invalidation flow through fresh Prisma clients. Synthetic rows were removed and the role was returned to `NOLOGIN` with no password.
+
+Current Supabase guidance supports disabling the Data API when an application never uses REST/GraphQL table access and recommends revoking `postgres` default privileges for new public objects. Dashboard-level Data API disablement remains an operator decision and live denial must still be tested independently after hosted application. See [Securing your API](https://supabase.com/docs/guides/api/securing-your-api), [Postgres roles](https://supabase.com/docs/guides/database/postgres/roles), and [RLS bypass roles](https://supabase.com/docs/guides/database/postgres/row-level-security#bypassing-row-level-security).
 
 ## Current Access Model
 
@@ -42,7 +59,7 @@ A future stronger design could use a `NOBYPASSRLS` runtime role and transaction-
 - Keep `auth`, `storage`, and `realtime` service schemas managed by Supabase. Do not directly delete Storage metadata rows; use the Storage API.
 - Verify default privileges so newly created tables do not silently become Data API-accessible.
 
-Exact SQL must be generated and reviewed against the selected target and its existing grants. It is intentionally absent because blindly enabling RLS can break Prisma and blanket schema revocation can break Supabase-managed objects.
+Exact application-object SQL is now present in the access-hardening Prisma migration and has passed the isolated rehearsal described above. It remains unapproved for hosted execution until durable recovery-key custody, a fresh hosted inventory and the EX-02 mutation checkpoint pass. Dashboard Data API configuration and the password-protected `LOGIN` cutover for `medvault_runtime` are operational steps, not migration secrets.
 
 Before generating SQL, inspect table owners, runtime/migration roles, `relrowsecurity`, policies, explicit grants, default ACLs, exposed schemas, and Data API settings. Blanket schema revokes can break Supabase-managed objects and are prohibited without that inventory. If possible, disable Data API exposure before applying the initial Prisma migration so there is no interval in which new medical tables inherit browser-accessible grants.
 
@@ -57,4 +74,4 @@ Before generating SQL, inspect table owners, runtime/migration roles, `relrowsec
 7. Prove public/anonymous and authenticated Data API clients cannot read or mutate the five application tables.
 8. Rerun two-user API IDOR tests and live profile/document/worker flows.
 
-No security DDL in this sequence has been executed.
+No security DDL in this sequence has been executed on the hosted project. The isolated local restore is the only database on which the reviewed security migration and temporary runtime login were exercised; that login was disabled and its generated password removed after the test.

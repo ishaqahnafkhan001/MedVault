@@ -3,25 +3,20 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CircleAlert, FileCheck2, LoaderCircle, Plus, ShieldCheck } from "lucide-react";
-import type { DocumentDto } from "@medvault/shared";
+import { dashboardResponseSchema } from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
 import { DocumentCard } from "./document-card";
-
-interface DashboardData {
-  recentDocuments: DocumentDto[];
-  latestReports: DocumentDto[];
-  counts: { processing: number; needsReview: number; verified: number };
-}
+import { LatestMetricCard } from "./latest-metric-card";
 
 export function DashboardView() {
   const query = useQuery({
     queryKey: ["dashboard"],
-    queryFn: () => apiRequest<DashboardData>("/v1/dashboard"),
+    queryFn: async () => dashboardResponseSchema.parse(await apiRequest<unknown>("/v1/dashboard")),
     refetchInterval: (q) => (q.state.data?.counts.processing ? 5000 : false),
   });
   if (query.isLoading) return <Loading />;
   if (query.isError || !query.data) return <ErrorState retry={() => void query.refetch()} />;
-  const { counts, recentDocuments, latestReports } = query.data;
+  const { counts, recentDocuments, latestMetrics, latestMetricsLimited } = query.data;
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-wrap items-end justify-between gap-5">
@@ -70,22 +65,30 @@ export function DashboardView() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="eyebrow">Verified history</p>
-            <h2 className="mt-1 text-xl font-extrabold">Latest by test</h2>
+            <h2 className="mt-1 text-xl font-extrabold">Latest values by metric</h2>
           </div>
-          <Link href="/reports" className="text-sm font-bold text-[#176c5b]">
-            View all
+          <Link href="/history" className="text-sm font-bold text-[#176c5b]">
+            Open test history
           </Link>
         </div>
-        {latestReports.length ? (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {latestReports.slice(0, 4).map((doc) => (
-              <DocumentCard key={doc.id} document={doc} />
-            ))}
-          </div>
+        {latestMetrics.length ? (
+          <>
+            {latestMetricsLimited && (
+              <p className="mb-3 text-xs text-[#8b5a17]">
+                Cards are based on the newest 200 eligible reports. Use Test history with a date or
+                metric filter for older results.
+              </p>
+            )}
+            <div className="grid gap-3 lg:grid-cols-2">
+              {latestMetrics.slice(0, 4).map((card) => (
+                <LatestMetricCard key={card.normalizedTestName} card={card} />
+              ))}
+            </div>
+          </>
         ) : (
           <Empty
             icon={<FileCheck2 />}
-            text="Verified reports will appear here after you review extracted information."
+            text="Latest values appear after a report’s measurements and clinical date are reviewed."
           />
         )}
       </section>

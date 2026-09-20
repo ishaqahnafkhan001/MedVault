@@ -1,0 +1,2350 @@
+{
+  "capturedAtUtc": "2026-09-10 19:30:42 UTC",
+  "projectRef": "ginzrzcgjmkrpkdywfds",
+  "scope": "Public schema definitions only; no application row values. Does not certify live-state freshness, grants, RLS or complete backup.",
+  "columns": [
+    {
+      "type": "uuid",
+      "table": "episode_analyses",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episode_analyses",
+      "column": "episode_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episode_analyses",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "episode_analyses",
+      "column": "status",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "text",
+      "table": "episode_analyses",
+      "column": "summary_text",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "episode_analyses",
+      "column": "provider",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "episode_analyses",
+      "column": "model",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "episode_analyses",
+      "column": "prompt_version",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "jsonb",
+      "table": "episode_analyses",
+      "column": "source_versions",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "character(64)",
+      "table": "episode_analyses",
+      "column": "input_fingerprint",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episode_analyses",
+      "column": "analyzed_at",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "episode_analyses",
+      "column": "failure_code",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episode_analyses",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episode_analyses",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episode_memberships",
+      "column": "episode_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episode_memberships",
+      "column": "document_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episode_memberships",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episodes",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "episodes",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "episodes",
+      "column": "title",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "episodes",
+      "column": "start_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "episodes",
+      "column": "end_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episodes",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "episodes",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "intake_logs",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "intake_logs",
+      "column": "occurrence_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "intake_logs",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(20)",
+      "table": "intake_logs",
+      "column": "action",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "intake_logs",
+      "column": "logged_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(500)",
+      "table": "intake_logs",
+      "column": "notes",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "intake_logs",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medical_documents",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medical_documents",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "\"DocumentType\"",
+      "table": "medical_documents",
+      "column": "document_type",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(255)",
+      "table": "medical_documents",
+      "column": "original_filename",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "character varying(100)",
+      "table": "medical_documents",
+      "column": "mime_type",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medical_documents",
+      "column": "file_size",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "character varying(600)",
+      "table": "medical_documents",
+      "column": "storage_path",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "character(64)",
+      "table": "medical_documents",
+      "column": "checksum_sha256",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medical_documents",
+      "column": "document_version",
+      "default": "1",
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "medical_documents",
+      "column": "document_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "medical_documents",
+      "column": "hospital_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "medical_documents",
+      "column": "test_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "medical_documents",
+      "column": "normalized_test_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "\"ReportCategory\"",
+      "table": "medical_documents",
+      "column": "category",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "\"ProcessingStatus\"",
+      "table": "medical_documents",
+      "column": "processing_status",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 15,
+      "generated": ""
+    },
+    {
+      "type": "\"VerificationStatus\"",
+      "table": "medical_documents",
+      "column": "verification_status",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 16,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medical_documents",
+      "column": "processing_attempts",
+      "default": "0",
+      "identity": "",
+      "not_null": true,
+      "position": 17,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medical_documents",
+      "column": "processing_started_at",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 18,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medical_documents",
+      "column": "failure_code",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 19,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medical_documents",
+      "column": "uploaded_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 20,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medical_documents",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 21,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medical_documents",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 22,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medication_schedules",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medication_schedules",
+      "column": "medication_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medication_schedules",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medication_schedules",
+      "column": "version",
+      "default": "1",
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "\"ScheduleFrequency\"",
+      "table": "medication_schedules",
+      "column": "frequency",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "jsonb",
+      "table": "medication_schedules",
+      "column": "administration_times",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "\"MealTiming\"",
+      "table": "medication_schedules",
+      "column": "meal_timing",
+      "default": "'NOT_SPECIFIED'::\"MealTiming\"",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medication_schedules",
+      "column": "iana_timezone",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "medication_schedules",
+      "column": "start_date",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "medication_schedules",
+      "column": "end_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medication_schedules",
+      "column": "stock_count",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "medication_schedules",
+      "column": "refill_alert_at",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "boolean",
+      "table": "medication_schedules",
+      "column": "active",
+      "default": "true",
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medication_schedules",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medication_schedules",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 15,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medications",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medications",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "character varying(200)",
+      "table": "medications",
+      "column": "name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(200)",
+      "table": "medications",
+      "column": "resolved_generic",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "medications",
+      "column": "resolved_status",
+      "default": "'UNRESOLVED'::character varying",
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medications",
+      "column": "strength",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medications",
+      "column": "dose_amount",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "medications",
+      "column": "dose_unit",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medications",
+      "column": "formulation",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "medications",
+      "column": "route",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "medications",
+      "column": "start_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "medications",
+      "column": "end_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "\"MedicationStatus\"",
+      "table": "medications",
+      "column": "status",
+      "default": "'ACTIVE'::\"MedicationStatus\"",
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "text",
+      "table": "medications",
+      "column": "notes",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "medications",
+      "column": "prescription_id",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 15,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medications",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 16,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "medications",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 17,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "patient_profiles",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "patient_profiles",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "patient_profiles",
+      "column": "full_name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "patient_profiles",
+      "column": "date_of_birth",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "patient_profiles",
+      "column": "gender",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(3)",
+      "table": "patient_profiles",
+      "column": "blood_group",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "text[]",
+      "table": "patient_profiles",
+      "column": "allergies",
+      "default": "ARRAY[]::text[]",
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "text[]",
+      "table": "patient_profiles",
+      "column": "chronic_conditions",
+      "default": "ARRAY[]::text[]",
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "patient_profiles",
+      "column": "emergency_contact_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "patient_profiles",
+      "column": "emergency_contact_phone",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "character varying(60)",
+      "table": "patient_profiles",
+      "column": "emergency_contact_relation",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "patient_profiles",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "patient_profiles",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "patients",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "patients",
+      "column": "auth_user_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "patients",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "patients",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "reminder_deliveries",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "reminder_deliveries",
+      "column": "occurrence_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "reminder_deliveries",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "reminder_deliveries",
+      "column": "channel",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "\"DeliveryStatus\"",
+      "table": "reminder_deliveries",
+      "column": "status",
+      "default": "'PENDING'::\"DeliveryStatus\"",
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "reminder_deliveries",
+      "column": "attempted_at",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "reminder_deliveries",
+      "column": "failure_code",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "reminder_deliveries",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "reminder_deliveries",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "report_extractions",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "report_extractions",
+      "column": "document_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "report_extractions",
+      "column": "document_version",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "\"ExtractionStatus\"",
+      "table": "report_extractions",
+      "column": "status",
+      "default": "'DRAFT'::\"ExtractionStatus\"",
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "report_extractions",
+      "column": "document_report_type",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_extractions",
+      "column": "extracted_test_name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_extractions",
+      "column": "normalized_test_name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "date",
+      "table": "report_extractions",
+      "column": "extracted_report_date",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_extractions",
+      "column": "extracted_hospital_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "\"ReportCategory\"",
+      "table": "report_extractions",
+      "column": "extracted_category",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "report_extractions",
+      "column": "patient_name_on_report",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "report_extractions",
+      "column": "provider",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "character varying(120)",
+      "table": "report_extractions",
+      "column": "model",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "report_extractions",
+      "column": "schema_version",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "jsonb",
+      "table": "report_extractions",
+      "column": "raw_output",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 15,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_extractions",
+      "column": "analyzed_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 16,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_extractions",
+      "column": "verified_at",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 17,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_extractions",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 18,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_extractions",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 19,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "report_measurements",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "report_measurements",
+      "column": "extraction_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "report_measurements",
+      "column": "sort_order",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_measurements",
+      "column": "name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_measurements",
+      "column": "normalized_name",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(240)",
+      "table": "report_measurements",
+      "column": "text_value",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "double precision",
+      "table": "report_measurements",
+      "column": "numeric_value",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "report_measurements",
+      "column": "unit",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "character varying(160)",
+      "table": "report_measurements",
+      "column": "reference_range",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 9,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "report_measurements",
+      "column": "source_flag",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 10,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_measurements",
+      "column": "verified_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 11,
+      "generated": ""
+    },
+    {
+      "type": "character varying(180)",
+      "table": "report_measurements",
+      "column": "verified_normalized_name",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 12,
+      "generated": ""
+    },
+    {
+      "type": "character varying(240)",
+      "table": "report_measurements",
+      "column": "verified_text_value",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 13,
+      "generated": ""
+    },
+    {
+      "type": "double precision",
+      "table": "report_measurements",
+      "column": "verified_numeric_value",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 14,
+      "generated": ""
+    },
+    {
+      "type": "character varying(80)",
+      "table": "report_measurements",
+      "column": "verified_unit",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 15,
+      "generated": ""
+    },
+    {
+      "type": "character varying(160)",
+      "table": "report_measurements",
+      "column": "verified_reference_range",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 16,
+      "generated": ""
+    },
+    {
+      "type": "character varying(40)",
+      "table": "report_measurements",
+      "column": "verified_source_flag",
+      "default": null,
+      "identity": "",
+      "not_null": false,
+      "position": 17,
+      "generated": ""
+    },
+    {
+      "type": "boolean",
+      "table": "report_measurements",
+      "column": "patient_corrected",
+      "default": "false",
+      "identity": "",
+      "not_null": true,
+      "position": 18,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_measurements",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 19,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "report_measurements",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 20,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "schedule_occurrences",
+      "column": "id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 1,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "schedule_occurrences",
+      "column": "schedule_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 2,
+      "generated": ""
+    },
+    {
+      "type": "uuid",
+      "table": "schedule_occurrences",
+      "column": "patient_id",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 3,
+      "generated": ""
+    },
+    {
+      "type": "integer",
+      "table": "schedule_occurrences",
+      "column": "schedule_version",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 4,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "schedule_occurrences",
+      "column": "due_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 5,
+      "generated": ""
+    },
+    {
+      "type": "character varying(20)",
+      "table": "schedule_occurrences",
+      "column": "local_time_str",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 6,
+      "generated": ""
+    },
+    {
+      "type": "\"OccurrenceStatus\"",
+      "table": "schedule_occurrences",
+      "column": "status",
+      "default": "'SCHEDULED'::\"OccurrenceStatus\"",
+      "identity": "",
+      "not_null": true,
+      "position": 7,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "schedule_occurrences",
+      "column": "created_at",
+      "default": "CURRENT_TIMESTAMP",
+      "identity": "",
+      "not_null": true,
+      "position": 8,
+      "generated": ""
+    },
+    {
+      "type": "timestamp(3) without time zone",
+      "table": "schedule_occurrences",
+      "column": "updated_at",
+      "default": null,
+      "identity": "",
+      "not_null": true,
+      "position": 9,
+      "generated": ""
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "f",
+      "name": "episode_analyses_episode_id_fkey",
+      "table": "episode_analyses",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (episode_id) REFERENCES episodes(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "episode_analyses_patient_id_fkey",
+      "table": "episode_analyses",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (patient_id) REFERENCES patients(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "episode_analyses_pkey",
+      "table": "episode_analyses",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "episode_memberships_document_id_fkey",
+      "table": "episode_memberships",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (document_id) REFERENCES medical_documents(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "episode_memberships_episode_id_fkey",
+      "table": "episode_memberships",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (episode_id) REFERENCES episodes(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "episode_memberships_pkey",
+      "table": "episode_memberships",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (episode_id, document_id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "episodes_patient_id_fkey",
+      "table": "episodes",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (patient_id) REFERENCES patients(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "episodes_pkey",
+      "table": "episodes",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "intake_logs_occurrence_id_fkey",
+      "table": "intake_logs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (occurrence_id) REFERENCES schedule_occurrences(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "intake_logs_pkey",
+      "table": "intake_logs",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "medical_documents_patient_id_fkey",
+      "table": "medical_documents",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (patient_id) REFERENCES patients(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "medical_documents_pkey",
+      "table": "medical_documents",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "medication_schedules_medication_id_fkey",
+      "table": "medication_schedules",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (medication_id) REFERENCES medications(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "medication_schedules_pkey",
+      "table": "medication_schedules",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "medications_patient_id_fkey",
+      "table": "medications",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (patient_id) REFERENCES patients(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "medications_pkey",
+      "table": "medications",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "medications_prescription_id_fkey",
+      "table": "medications",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (prescription_id) REFERENCES medical_documents(id) ON UPDATE CASCADE ON DELETE SET NULL",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "patient_profiles_patient_id_fkey",
+      "table": "patient_profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (patient_id) REFERENCES patients(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "patient_profiles_pkey",
+      "table": "patient_profiles",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "patients_pkey",
+      "table": "patients",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "reminder_deliveries_occurrence_id_fkey",
+      "table": "reminder_deliveries",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (occurrence_id) REFERENCES schedule_occurrences(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "reminder_deliveries_pkey",
+      "table": "reminder_deliveries",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "report_extractions_document_id_fkey",
+      "table": "report_extractions",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (document_id) REFERENCES medical_documents(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "report_extractions_pkey",
+      "table": "report_extractions",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "report_measurements_extraction_id_fkey",
+      "table": "report_measurements",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (extraction_id) REFERENCES report_extractions(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "report_measurements_pkey",
+      "table": "report_measurements",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "p",
+      "name": "schedule_occurrences_pkey",
+      "table": "schedule_occurrences",
+      "validated": true,
+      "deferrable": false,
+      "definition": "PRIMARY KEY (id)",
+      "initially_deferred": false
+    },
+    {
+      "kind": "f",
+      "name": "schedule_occurrences_schedule_id_fkey",
+      "table": "schedule_occurrences",
+      "validated": true,
+      "deferrable": false,
+      "definition": "FOREIGN KEY (schedule_id) REFERENCES medication_schedules(id) ON UPDATE CASCADE ON DELETE CASCADE",
+      "initially_deferred": false
+    }
+  ],
+  "indexes": [
+    {
+      "name": "episode_analyses_episode_id_created_at_idx",
+      "ready": true,
+      "table": "episode_analyses",
+      "valid": true,
+      "definition": "CREATE INDEX episode_analyses_episode_id_created_at_idx ON public.episode_analyses USING btree (episode_id, created_at DESC)"
+    },
+    {
+      "name": "episode_analyses_episode_id_input_fingerprint_idx",
+      "ready": true,
+      "table": "episode_analyses",
+      "valid": true,
+      "definition": "CREATE INDEX episode_analyses_episode_id_input_fingerprint_idx ON public.episode_analyses USING btree (episode_id, input_fingerprint)"
+    },
+    {
+      "name": "episode_analyses_pkey",
+      "ready": true,
+      "table": "episode_analyses",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX episode_analyses_pkey ON public.episode_analyses USING btree (id)"
+    },
+    {
+      "name": "episode_memberships_pkey",
+      "ready": true,
+      "table": "episode_memberships",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX episode_memberships_pkey ON public.episode_memberships USING btree (episode_id, document_id)"
+    },
+    {
+      "name": "episodes_patient_id_start_date_idx",
+      "ready": true,
+      "table": "episodes",
+      "valid": true,
+      "definition": "CREATE INDEX episodes_patient_id_start_date_idx ON public.episodes USING btree (patient_id, start_date DESC)"
+    },
+    {
+      "name": "episodes_pkey",
+      "ready": true,
+      "table": "episodes",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX episodes_pkey ON public.episodes USING btree (id)"
+    },
+    {
+      "name": "intake_logs_occurrence_id_idx",
+      "ready": true,
+      "table": "intake_logs",
+      "valid": true,
+      "definition": "CREATE INDEX intake_logs_occurrence_id_idx ON public.intake_logs USING btree (occurrence_id)"
+    },
+    {
+      "name": "intake_logs_patient_id_logged_at_idx",
+      "ready": true,
+      "table": "intake_logs",
+      "valid": true,
+      "definition": "CREATE INDEX intake_logs_patient_id_logged_at_idx ON public.intake_logs USING btree (patient_id, logged_at DESC)"
+    },
+    {
+      "name": "intake_logs_pkey",
+      "ready": true,
+      "table": "intake_logs",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX intake_logs_pkey ON public.intake_logs USING btree (id)"
+    },
+    {
+      "name": "medical_documents_patient_id_created_at_idx",
+      "ready": true,
+      "table": "medical_documents",
+      "valid": true,
+      "definition": "CREATE INDEX medical_documents_patient_id_created_at_idx ON public.medical_documents USING btree (patient_id, created_at DESC)"
+    },
+    {
+      "name": "medical_documents_patient_id_document_type_processing_statu_idx",
+      "ready": true,
+      "table": "medical_documents",
+      "valid": true,
+      "definition": "CREATE INDEX medical_documents_patient_id_document_type_processing_statu_idx ON public.medical_documents USING btree (patient_id, document_type, processing_status)"
+    },
+    {
+      "name": "medical_documents_patient_id_verification_status_normalized_idx",
+      "ready": true,
+      "table": "medical_documents",
+      "valid": true,
+      "definition": "CREATE INDEX medical_documents_patient_id_verification_status_normalized_idx ON public.medical_documents USING btree (patient_id, verification_status, normalized_test_name, document_date DESC, created_at DESC)"
+    },
+    {
+      "name": "medical_documents_pkey",
+      "ready": true,
+      "table": "medical_documents",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX medical_documents_pkey ON public.medical_documents USING btree (id)"
+    },
+    {
+      "name": "medical_documents_storage_path_key",
+      "ready": true,
+      "table": "medical_documents",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX medical_documents_storage_path_key ON public.medical_documents USING btree (storage_path)"
+    },
+    {
+      "name": "medication_schedules_medication_id_idx",
+      "ready": true,
+      "table": "medication_schedules",
+      "valid": true,
+      "definition": "CREATE INDEX medication_schedules_medication_id_idx ON public.medication_schedules USING btree (medication_id)"
+    },
+    {
+      "name": "medication_schedules_patient_id_active_start_date_idx",
+      "ready": true,
+      "table": "medication_schedules",
+      "valid": true,
+      "definition": "CREATE INDEX medication_schedules_patient_id_active_start_date_idx ON public.medication_schedules USING btree (patient_id, active, start_date)"
+    },
+    {
+      "name": "medication_schedules_pkey",
+      "ready": true,
+      "table": "medication_schedules",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX medication_schedules_pkey ON public.medication_schedules USING btree (id)"
+    },
+    {
+      "name": "medications_patient_id_status_idx",
+      "ready": true,
+      "table": "medications",
+      "valid": true,
+      "definition": "CREATE INDEX medications_patient_id_status_idx ON public.medications USING btree (patient_id, status)"
+    },
+    {
+      "name": "medications_pkey",
+      "ready": true,
+      "table": "medications",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX medications_pkey ON public.medications USING btree (id)"
+    },
+    {
+      "name": "patient_profiles_patient_id_key",
+      "ready": true,
+      "table": "patient_profiles",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX patient_profiles_patient_id_key ON public.patient_profiles USING btree (patient_id)"
+    },
+    {
+      "name": "patient_profiles_pkey",
+      "ready": true,
+      "table": "patient_profiles",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX patient_profiles_pkey ON public.patient_profiles USING btree (id)"
+    },
+    {
+      "name": "patients_auth_user_id_key",
+      "ready": true,
+      "table": "patients",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX patients_auth_user_id_key ON public.patients USING btree (auth_user_id)"
+    },
+    {
+      "name": "patients_pkey",
+      "ready": true,
+      "table": "patients",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX patients_pkey ON public.patients USING btree (id)"
+    },
+    {
+      "name": "reminder_deliveries_occurrence_id_idx",
+      "ready": true,
+      "table": "reminder_deliveries",
+      "valid": true,
+      "definition": "CREATE INDEX reminder_deliveries_occurrence_id_idx ON public.reminder_deliveries USING btree (occurrence_id)"
+    },
+    {
+      "name": "reminder_deliveries_patient_id_status_idx",
+      "ready": true,
+      "table": "reminder_deliveries",
+      "valid": true,
+      "definition": "CREATE INDEX reminder_deliveries_patient_id_status_idx ON public.reminder_deliveries USING btree (patient_id, status)"
+    },
+    {
+      "name": "reminder_deliveries_pkey",
+      "ready": true,
+      "table": "reminder_deliveries",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX reminder_deliveries_pkey ON public.reminder_deliveries USING btree (id)"
+    },
+    {
+      "name": "report_extractions_document_id_document_version_key",
+      "ready": true,
+      "table": "report_extractions",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX report_extractions_document_id_document_version_key ON public.report_extractions USING btree (document_id, document_version)"
+    },
+    {
+      "name": "report_extractions_document_id_key",
+      "ready": true,
+      "table": "report_extractions",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX report_extractions_document_id_key ON public.report_extractions USING btree (document_id)"
+    },
+    {
+      "name": "report_extractions_pkey",
+      "ready": true,
+      "table": "report_extractions",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX report_extractions_pkey ON public.report_extractions USING btree (id)"
+    },
+    {
+      "name": "report_measurements_extraction_id_sort_order_key",
+      "ready": true,
+      "table": "report_measurements",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX report_measurements_extraction_id_sort_order_key ON public.report_measurements USING btree (extraction_id, sort_order)"
+    },
+    {
+      "name": "report_measurements_pkey",
+      "ready": true,
+      "table": "report_measurements",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX report_measurements_pkey ON public.report_measurements USING btree (id)"
+    },
+    {
+      "name": "schedule_occurrences_patient_id_due_at_idx",
+      "ready": true,
+      "table": "schedule_occurrences",
+      "valid": true,
+      "definition": "CREATE INDEX schedule_occurrences_patient_id_due_at_idx ON public.schedule_occurrences USING btree (patient_id, due_at)"
+    },
+    {
+      "name": "schedule_occurrences_pkey",
+      "ready": true,
+      "table": "schedule_occurrences",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX schedule_occurrences_pkey ON public.schedule_occurrences USING btree (id)"
+    },
+    {
+      "name": "schedule_occurrences_schedule_id_due_at_key",
+      "ready": true,
+      "table": "schedule_occurrences",
+      "valid": true,
+      "definition": "CREATE UNIQUE INDEX schedule_occurrences_schedule_id_due_at_key ON public.schedule_occurrences USING btree (schedule_id, due_at)"
+    },
+    {
+      "name": "schedule_occurrences_schedule_id_status_idx",
+      "ready": true,
+      "table": "schedule_occurrences",
+      "valid": true,
+      "definition": "CREATE INDEX schedule_occurrences_schedule_id_status_idx ON public.schedule_occurrences USING btree (schedule_id, status)"
+    }
+  ],
+  "enums": [
+    {
+      "name": "DeliveryStatus",
+      "label": "PENDING",
+      "order": 1
+    },
+    {
+      "name": "DeliveryStatus",
+      "label": "DELIVERED",
+      "order": 2
+    },
+    {
+      "name": "DeliveryStatus",
+      "label": "FAILED",
+      "order": 3
+    },
+    {
+      "name": "DeliveryStatus",
+      "label": "CANCELLED",
+      "order": 4
+    },
+    {
+      "name": "DocumentType",
+      "label": "REPORT",
+      "order": 1
+    },
+    {
+      "name": "DocumentType",
+      "label": "PRESCRIPTION",
+      "order": 2
+    },
+    {
+      "name": "ExtractionStatus",
+      "label": "DRAFT",
+      "order": 1
+    },
+    {
+      "name": "ExtractionStatus",
+      "label": "VERIFIED",
+      "order": 2
+    },
+    {
+      "name": "MealTiming",
+      "label": "BEFORE_MEAL",
+      "order": 1
+    },
+    {
+      "name": "MealTiming",
+      "label": "WITH_MEAL",
+      "order": 2
+    },
+    {
+      "name": "MealTiming",
+      "label": "AFTER_MEAL",
+      "order": 3
+    },
+    {
+      "name": "MealTiming",
+      "label": "NOT_SPECIFIED",
+      "order": 4
+    },
+    {
+      "name": "MedicationStatus",
+      "label": "ACTIVE",
+      "order": 1
+    },
+    {
+      "name": "MedicationStatus",
+      "label": "PAUSED",
+      "order": 2
+    },
+    {
+      "name": "MedicationStatus",
+      "label": "COMPLETED",
+      "order": 3
+    },
+    {
+      "name": "MedicationStatus",
+      "label": "DISCONTINUED",
+      "order": 4
+    },
+    {
+      "name": "MedicationStatus",
+      "label": "ARCHIVED",
+      "order": 5
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "SCHEDULED",
+      "order": 1
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "DUE",
+      "order": 2
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "OVERDUE",
+      "order": 3
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "TAKEN",
+      "order": 4
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "SKIPPED",
+      "order": 5
+    },
+    {
+      "name": "OccurrenceStatus",
+      "label": "CANCELLED",
+      "order": 6
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "NOT_APPLICABLE",
+      "order": 1
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "UPLOADED",
+      "order": 2
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "QUEUED",
+      "order": 3
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "PROCESSING",
+      "order": 4
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "NEEDS_REVIEW",
+      "order": 5
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "VERIFIED",
+      "order": 6
+    },
+    {
+      "name": "ProcessingStatus",
+      "label": "FAILED",
+      "order": 7
+    },
+    {
+      "name": "ReportCategory",
+      "label": "HEMATOLOGY",
+      "order": 1
+    },
+    {
+      "name": "ReportCategory",
+      "label": "BIOCHEMISTRY",
+      "order": 2
+    },
+    {
+      "name": "ReportCategory",
+      "label": "IMMUNOLOGY",
+      "order": 3
+    },
+    {
+      "name": "ReportCategory",
+      "label": "MICROBIOLOGY",
+      "order": 4
+    },
+    {
+      "name": "ReportCategory",
+      "label": "ENDOCRINOLOGY",
+      "order": 5
+    },
+    {
+      "name": "ReportCategory",
+      "label": "CARDIOLOGY",
+      "order": 6
+    },
+    {
+      "name": "ReportCategory",
+      "label": "RADIOLOGY",
+      "order": 7
+    },
+    {
+      "name": "ReportCategory",
+      "label": "PATHOLOGY",
+      "order": 8
+    },
+    {
+      "name": "ReportCategory",
+      "label": "URINALYSIS",
+      "order": 9
+    },
+    {
+      "name": "ReportCategory",
+      "label": "OTHER",
+      "order": 10
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "ONCE_DAILY",
+      "order": 1
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "TWICE_DAILY",
+      "order": 2
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "THREE_TIMES_DAILY",
+      "order": 3
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "FOUR_TIMES_DAILY",
+      "order": 4
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "EVERY_X_HOURS",
+      "order": 5
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "AS_NEEDED",
+      "order": 6
+    },
+    {
+      "name": "ScheduleFrequency",
+      "label": "CUSTOM",
+      "order": 7
+    },
+    {
+      "name": "VerificationStatus",
+      "label": "NOT_APPLICABLE",
+      "order": 1
+    },
+    {
+      "name": "VerificationStatus",
+      "label": "PENDING",
+      "order": 2
+    },
+    {
+      "name": "VerificationStatus",
+      "label": "VERIFIED",
+      "order": 3
+    }
+  ]
+}

@@ -9,6 +9,7 @@ declare global {
   namespace Express {
     interface Locals {
       auth: AuthenticatedUser;
+      requestId: string;
     }
   }
 }

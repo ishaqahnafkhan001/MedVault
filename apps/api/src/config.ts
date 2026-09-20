@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  DEFAULT_GEMINI_MODEL,
+  assertMigrationCredentialIsProcessOnly,
   isServiceUrl,
   validateDatabaseEnvironment,
   validateRedisEnvironment,
@@ -26,6 +28,7 @@ const configSchema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   SUPABASE_STORAGE_BUCKET: z.string().min(1).default("medical-documents"),
+  GEMINI_MODEL: z.string().trim().min(1).default(DEFAULT_GEMINI_MODEL),
   NEXT_PUBLIC_API_URL: serviceUrl(["http", "https"], "HTTP(S)").optional(),
   MAX_UPLOAD_BYTES: z.coerce
     .number()
@@ -56,6 +59,7 @@ export type ApiConfig = Omit<ParsedApiConfig, "RATE_LIMIT_BACKEND" | "RATE_LIMIT
 };
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): ApiConfig {
+  assertMigrationCredentialIsProcessOnly(environment, "the API application environment");
   const result = configSchema.safeParse(environment);
   if (!result.success) {
     const issues = result.error.issues.map(

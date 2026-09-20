@@ -48,9 +48,30 @@ describe("report processor", () => {
     expect(repository.persisted).toHaveLength(1);
   });
 
+  it("screens a readable report before extraction", async () => {
+    const repository = new FakeRepository(report());
+    const calls: string[] = [];
+    const extractionAdapter = new MockReportExtractionAdapter(extraction);
+    const ai: ReportExtractionAdapter = {
+      classify: () => {
+        calls.push("classify");
+        return Promise.resolve();
+      },
+      extract: () => {
+        calls.push("extract");
+        return extractionAdapter.extract();
+      },
+    };
+    await expect(
+      processorWith(repository, ai).process(job(), { number: 1, maximum: 4 }),
+    ).resolves.toBe("processed");
+    expect(calls).toEqual(["classify", "extract"]);
+  });
+
   it("requeues a transient failure before the final attempt", async () => {
     const repository = new FakeRepository(report());
     const ai: ReportExtractionAdapter = {
+      classify: () => Promise.resolve(),
       extract: () => Promise.reject(new AiExtractionError("temporary", true, "AI_UNAVAILABLE")),
     };
     await expect(
@@ -60,9 +81,28 @@ describe("report processor", () => {
     expect(repository.failureCodes).toEqual([]);
   });
 
+  it("keeps a transient screening outage retryable without starting extraction", async () => {
+    const repository = new FakeRepository(report());
+    let extractCalled = false;
+    const ai: ReportExtractionAdapter = {
+      classify: () => Promise.reject(new AiExtractionError("temporary", true, "AI_UNAVAILABLE")),
+      extract: () => {
+        extractCalled = true;
+        return Promise.reject(new Error("must not extract"));
+      },
+    };
+    await expect(
+      processorWith(repository, ai).process(job(), { number: 1, maximum: 4 }),
+    ).rejects.toBeInstanceOf(AiExtractionError);
+    expect(extractCalled).toBe(false);
+    expect(repository.retryCodes).toEqual(["AI_UNAVAILABLE"]);
+    expect(repository.failureCodes).toEqual([]);
+  });
+
   it("marks a final failure with a safe code", async () => {
     const repository = new FakeRepository(report());
     const ai: ReportExtractionAdapter = {
+      classify: () => Promise.resolve(),
       extract: () => Promise.reject(new AiExtractionError("temporary", true, "AI_UNAVAILABLE")),
     };
     await expect(
@@ -75,6 +115,7 @@ describe("report processor", () => {
     const repository = new FakeRepository({ ...report(), documentType: "PRESCRIPTION" });
     let calls = 0;
     const ai: ReportExtractionAdapter = {
+      classify: () => Promise.resolve(),
       extract: () => {
         calls += 1;
         return Promise.reject(new Error("must not run"));
@@ -90,6 +131,7 @@ describe("report processor", () => {
   it("rejects malformed AI output at the persistence boundary", async () => {
     const repository = new FakeRepository(report());
     const ai = {
+      classify: () => Promise.resolve(),
       extract: () => Promise.resolve({ extraction: { bad: true } } as unknown as ExtractionResult),
     };
     await expect(
@@ -131,6 +173,41 @@ describe("report processor", () => {
     expect(isExpectedReportStoragePath("user-a", "doc-a", "user-a/doc-b/report.pdf")).toBe(false);
     expect(isExpectedReportStoragePath("user-a", "doc-a", "user-a\\doc-a\\report.pdf")).toBe(false);
   });
+
+  describe("document screening gate", () => {
+    const testCases: { reason: string; safeCode: AiExtractionError["safeCode"] }[] = [
+      { reason: "unrelated image", safeCode: "UNRELATED_IMAGE" },
+      { reason: "blurry/blank document", safeCode: "UNREADABLE_DOCUMENT" },
+      { reason: "unsupported medical content", safeCode: "UNSUPPORTED_MEDICAL" },
+      { reason: "prescription", safeCode: "PRESCRIPTION_STORED" },
+      { reason: "category mismatch", safeCode: "CATEGORY_MISMATCH" },
+    ];
+
+    for (const { reason, safeCode } of testCases) {
+      it(`rejects ${reason} permanently with ${safeCode}`, async () => {
+        const repository = new FakeRepository(report());
+        let extractCalled = false;
+        const ai: ReportExtractionAdapter = {
+          classify: () => Promise.reject(new AiExtractionError("mock rejection", false, safeCode)),
+          extract: () => {
+            extractCalled = true;
+            return Promise.reject(new Error("must not extract"));
+          },
+        };
+        await expect(
+          processorWith(repository, ai).process(job(), { number: 1, maximum: 4 }),
+        ).rejects.toBeInstanceOf(PermanentProcessingError);
+        expect(extractCalled).toBe(false);
+        if (safeCode === "PRESCRIPTION_STORED") {
+          expect(repository.prescriptionMarked).toBe(true);
+          expect(repository.failureCodes).toEqual([]);
+        } else {
+          expect(repository.failureCodes).toEqual([safeCode]);
+        }
+        expect(repository.persisted).toHaveLength(0);
+      });
+    }
+  });
 });
 
 class FakeRepository implements ReportProcessorRepository {
@@ -138,6 +215,7 @@ class FakeRepository implements ReportProcessorRepository {
   retryCodes: string[] = [];
   failureCodes: string[] = [];
   persistSucceeds = true;
+  prescriptionMarked = false;
 
   constructor(public claimed: ClaimedReport | "complete" | null) {}
   claim() {
@@ -153,6 +231,10 @@ class FakeRepository implements ReportProcessorRepository {
   }
   markFailed(_document: ClaimedReport, safeCode: string) {
     this.failureCodes.push(safeCode);
+    return Promise.resolve();
+  }
+  markAsPrescription() {
+    this.prescriptionMarked = true;
     return Promise.resolve();
   }
 }
@@ -180,6 +262,10 @@ class SingleClaimRepository implements ReportProcessorRepository {
   }
 
   markFailed(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  markAsPrescription(): Promise<void> {
     return Promise.resolve();
   }
 }

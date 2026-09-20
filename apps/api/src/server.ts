@@ -42,7 +42,13 @@ const storage = new SupabasePrivateStorage(
   config.SUPABASE_SERVICE_ROLE_KEY,
   config.SUPABASE_STORAGE_BUCKET,
 );
-const service = new PrismaAppService(prisma, storage, queue, config.SIGNED_URL_TTL_SECONDS);
+const service = new PrismaAppService(
+  prisma,
+  storage,
+  queue,
+  config.SIGNED_URL_TTL_SECONDS,
+  config.GEMINI_MODEL,
+);
 const app = createApp({
   authVerifier: new SupabaseAuthVerifier(config.SUPABASE_URL, config.SUPABASE_ANON_KEY),
   service,

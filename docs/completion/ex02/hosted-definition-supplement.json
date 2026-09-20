@@ -1,0 +1,113 @@
+{
+  "projectRef": "ginzrzcgjmkrpkdywfds",
+  "scope": "Read-only metadata supplementary to comparator; no row contents, not a freshness or restore guarantee.",
+  "table_options": [
+    {
+      "kind": "r",
+      "table": "_prisma_migrations",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "episode_analyses",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "episode_memberships",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "episodes",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "intake_logs",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "medical_documents",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "medication_schedules",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "medications",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "patient_profiles",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "patients",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "reminder_deliveries",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "report_extractions",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "report_measurements",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    },
+    {
+      "kind": "r",
+      "table": "schedule_occurrences",
+      "options": null,
+      "persistence": "p",
+      "access_method": "heap"
+    }
+  ],
+  "captured_at_utc": "2026-09-10 19:41:18",
+  "database_locale": {
+    "ctype": "en_US.UTF-8",
+    "collate": "en_US.UTF-8",
+    "encoding": "UTF8"
+  },
+  "public_domain_count": 0,
+  "public_sequence_count": 0,
+  "nondefault_column_collations": []
+}

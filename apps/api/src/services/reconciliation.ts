@@ -54,7 +54,7 @@ export class ReportQueueReconciler {
     };
 
     for (const candidate of candidates) {
-      if (candidate.processingStatus !== "QUEUED" && candidate.processingStatus !== "PROCESSING") {
+      if (candidate.processingStatus !== "QUEUED" && candidate.processingStatus !== "PROCESSING" && candidate.processingStatus !== "UPLOADED") {
         summary.skipped += 1;
         continue;
       }
@@ -101,6 +101,7 @@ export class PrismaReconciliationRepository implements ReconciliationRepository 
       where: {
         documentType: "REPORT",
         OR: [
+          { processingStatus: "UPLOADED", updatedAt: { lte: cutoff } },
           { processingStatus: "QUEUED", updatedAt: { lte: cutoff } },
           {
             processingStatus: "PROCESSING",

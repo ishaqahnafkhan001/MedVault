@@ -1,9 +1,20 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { FileText, FolderHeart, LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
+import {
+  FileText,
+  FolderHeart,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  UserRound,
+  X,
+  Activity,
+  ChartLine,
+} from "lucide-react";
 import { useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -11,16 +22,23 @@ const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/documents", label: "Documents", icon: FolderHeart },
   { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/history", label: "Test history", icon: ChartLine },
+  { href: "/episodes", label: "Episodes", icon: Activity },
   { href: "/profile", label: "Profile", icon: UserRound },
 ];
 
 export function AppShell({ children, email }: { children: ReactNode; email: string }) {
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
   async function logout() {
-    await getSupabaseBrowserClient().auth.signOut();
-    window.location.replace("/auth/login");
+    try {
+      await getSupabaseBrowserClient().auth.signOut();
+    } finally {
+      queryClient.clear();
+      window.location.replace("/auth/login");
+    }
   }
 
   return (

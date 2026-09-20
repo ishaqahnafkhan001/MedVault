@@ -6,6 +6,9 @@ import {
   reportJobDataSchema,
   type DocumentType,
   type ReportJobData as SharedReportJobData,
+  summaryJobSchema,
+  SUMMARY_JOB,
+  type SummaryJob,
 } from "@medvault/shared";
 import { AppError } from "../errors.js";
 import { closeRedisConnection, createApiRedisConnection } from "./redis-connection.js";
@@ -18,6 +21,8 @@ export interface ReportQueue {
   ensureQueued(data: ReportJobData): Promise<"enqueued" | "existing">;
   getState(data: ReportJobData): Promise<ReportJobState>;
   removeForDeletion(data: ReportJobData): Promise<"removed" | "missing" | "active">;
+  enqueueSummary(data: SummaryJob): Promise<void>;
+  checkHealth(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -38,13 +43,17 @@ export function assertReportOnly(documentType: DocumentType): void {
   }
 }
 
+import { EPISODE_SUMMARY_QUEUE } from "@medvault/shared";
+
 export class BullMqReportQueue implements ReportQueue {
   private readonly connection: IORedis;
   private readonly queue: Queue<ReportJobData>;
+  private readonly episodeQueue: Queue<SummaryJob>;
 
-  constructor(redisUrl: string) {
+  constructor(redisUrl: string, prefix = "bull") {
     this.connection = createApiRedisConnection(redisUrl, "queue-producer");
-    this.queue = new Queue(REPORT_ANALYSIS_QUEUE, { connection: this.connection });
+    this.queue = new Queue(REPORT_ANALYSIS_QUEUE, { connection: this.connection, prefix });
+    this.episodeQueue = new Queue(EPISODE_SUMMARY_QUEUE, { connection: this.connection, prefix });
   }
 
   async enqueue(documentType: DocumentType, data: ReportJobData): Promise<void> {
@@ -111,6 +120,21 @@ export class BullMqReportQueue implements ReportQueue {
     }
   }
 
+  async enqueueSummary(raw: SummaryJob): Promise<void> {
+    const data = summaryJobSchema.parse(raw);
+    try {
+      await this.episodeQueue.add(SUMMARY_JOB, data, {
+        jobId: `summary-${data.analysisId}-${data.generation}`,
+        attempts: 4,
+        backoff: { type: "exponential", delay: 2_000 },
+        removeOnComplete: 100,
+        removeOnFail: 250,
+      });
+    } catch (error) {
+      throw asQueueError(error);
+    }
+  }
+
   private async add(data: ReportJobData): Promise<void> {
     await this.queue.add(REPORT_ANALYSIS_JOB, data, {
       jobId: reportJobId(data),
@@ -121,8 +145,15 @@ export class BullMqReportQueue implements ReportQueue {
     });
   }
 
+  checkHealth(): Promise<void> {
+    if (this.connection.status !== "ready") {
+      return Promise.reject(queueUnavailable());
+    }
+    return Promise.resolve();
+  }
+
   async close(): Promise<void> {
-    await this.queue.close();
+    await Promise.all([this.queue.close(), this.episodeQueue.close()]);
     await closeRedisConnection(this.connection);
   }
 }

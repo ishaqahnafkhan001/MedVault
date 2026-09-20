@@ -2,10 +2,12 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as Sentry from "@sentry/node";
-import { GeminiReportExtractionAdapter } from "@medvault/ai";
+import { GeminiReportExtractionAdapter, GeminiEpisodeSummaryAdapter } from "@medvault/ai";
 import { getPrismaClient } from "@medvault/database";
 import {
   REPORT_ANALYSIS_QUEUE,
+  EPISODE_SUMMARY_QUEUE,
+  SUMMARY_JOB,
   describeEnvironmentTopology,
   formatEnvironmentTopology,
 } from "@medvault/shared";
@@ -14,6 +16,8 @@ import { loadWorkerConfig } from "./config.js";
 import { parseReportJob } from "./job-contract.js";
 import { PermanentProcessingError, ReportProcessor } from "./processor.js";
 import { PrismaReportProcessorRepository } from "./prisma-repository.js";
+import { EpisodeSummaryProcessor, PermanentSummaryError } from "./episode-processor.js";
+import { PrismaEpisodeProcessorRepository } from "./episode-prisma-repository.js";
 import { closeWorkerRedisConnection, createWorkerRedisConnection } from "./redis-connection.js";
 import { initializeWorkerSentry } from "./sentry.js";
 import { SupabaseReportFileStorage } from "./storage.js";
@@ -79,11 +83,41 @@ if (!environment.GEMINI_API_KEY) {
     process.stderr.write("Report worker infrastructure error\n");
   });
 
+  const episodeProcessor = new EpisodeSummaryProcessor(
+    new PrismaEpisodeProcessorRepository(prisma, environment.GEMINI_MODEL),
+    new GeminiEpisodeSummaryAdapter(environment.GEMINI_API_KEY, environment.GEMINI_MODEL),
+  );
+
+  const episodeWorker = new Worker<unknown>(
+    EPISODE_SUMMARY_QUEUE,
+    async (job: Job<unknown>) => {
+      try {
+        if (job.name !== SUMMARY_JOB) throw new PermanentSummaryError("INVALID_SUMMARY_JOB");
+        return await episodeProcessor.process(job.data, {
+          number: job.attemptsMade + 1,
+          maximum: job.opts.attempts ?? 1,
+        });
+      } catch (error) {
+        Sentry.captureMessage("MedVault episode summary processing failed", "error");
+        if (error instanceof PermanentSummaryError) throw new UnrecoverableError(error.safeCode);
+        throw error;
+      }
+    },
+    { connection, concurrency: 2 },
+  );
+
+  episodeWorker.on("error", () => {
+    process.stderr.write("Episode summary worker infrastructure error\n");
+  });
+
   let shuttingDown = false;
   async function shutdown(): Promise<void> {
     if (shuttingDown) return;
     shuttingDown = true;
-    await worker.close().catch(() => undefined);
+    await Promise.allSettled([
+      worker.close().catch(() => undefined),
+      episodeWorker.close().catch(() => undefined),
+    ]);
     await Promise.allSettled([closeWorkerRedisConnection(connection), prisma.$disconnect()]);
   }
 

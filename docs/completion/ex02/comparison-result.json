@@ -1,0 +1,54 @@
+{
+  "status": "MATCH_WITHIN_CAPTURED_SCOPE",
+  "counts": {
+    "columns": {
+      "expected": 159,
+      "snapshot": 159
+    },
+    "constraints": {
+      "expected": 28,
+      "snapshot": 28
+    },
+    "indexes": {
+      "expected": 35,
+      "snapshot": 35
+    },
+    "enums": {
+      "expected": 50,
+      "snapshot": 50
+    },
+    "tables": {
+      "expected": 13,
+      "snapshot": 13
+    },
+    "enumTypes": {
+      "expected": 10,
+      "snapshot": 10
+    }
+  },
+  "differences": [],
+  "snapshotCapturedAtUtc": "2026-09-10 19:30:42 UTC",
+  "comparedAtUtc": "2026-09-10T19:37:10.210Z",
+  "inputs": [
+    {
+      "path": "packages/database/prisma/migrations/20260807000000_initial/migration.sql",
+      "sha256": "b7bf19338333b70fdba8ecaf3906b362824bc0389124964c7cf69d687f19cf32"
+    },
+    {
+      "path": "packages/database/prisma/migrations/20260908000000_capture_existing_episode_medication_schema/migration.sql",
+      "sha256": "23f8ed918d6f1eb815ec480a32fc2885acfa74e3d5a002c30e349fc631416290"
+    },
+    {
+      "path": "docs/completion/ex02/hosted-schema.json",
+      "sha256": "23a0f6bac5ef19feb944ec84f45dc0a84a5c94cda7e83760de3e1dc53c7bacf9"
+    }
+  ],
+  "limitations": [
+    "Offline comparison of one sanitized snapshot, not a live freshness guarantee or authorization to resolve/deploy migrations.",
+    "Exactly the initial and episode/medication capture migrations; the later medical-summary migration is not expected in this baseline.",
+    "Only public ordinary-table columns, PK/FK constraints, indexes and enum labels captured by the parent metadata query; _prisma_migrations definitions are excluded.",
+    "Only narrowly supported repository syntax; unsupported expressions, clauses and metadata shapes fail closed and require review, not SQL execution.",
+    "No certification of relation kinds or empty tables omitted from the column inventory, collations, table/storage options, domains, sequences, routines, triggers, policies, grants, ownership, role inheritance, default ACLs, exposed schemas, data or migration history.",
+    "No backup, restore, API/worker role access, Data API isolation, Auth or Storage verification. All EX-02 safety gates remain independent."
+  ]
+}

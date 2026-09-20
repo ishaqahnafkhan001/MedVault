@@ -19,6 +19,7 @@ export interface ReportProcessorRepository {
   persist(document: ClaimedReport, result: ExtractionResult): Promise<boolean>;
   markRetry(document: ClaimedReport, safeCode: string): Promise<void>;
   markFailed(document: ClaimedReport, safeCode: string): Promise<void>;
+  markAsPrescription(document: ClaimedReport): Promise<void>;
 }
 
 export interface ReportFileStorage {
@@ -58,7 +59,9 @@ export class ReportProcessor {
 
     try {
       const bytes = await this.storage.download(document.storagePath);
-      const result = await this.ai.extract({ bytes, mimeType: document.mimeType });
+      const file = { bytes, mimeType: document.mimeType };
+      await this.ai.classify(file, document.documentType);
+      const result = await this.ai.extract(file);
       const extraction = reportExtractionSchema.parse(result.extraction);
       const normalizedTestName = normalizeTestName(
         extraction.normalizedTestName ?? extraction.testName,
@@ -80,6 +83,10 @@ export class ReportProcessor {
       };
       return (await this.repository.persist(document, normalizedResult)) ? "processed" : "stale";
     } catch (error) {
+      if (error instanceof AiExtractionError && error.safeCode === "PRESCRIPTION_STORED") {
+        await this.repository.markAsPrescription(document);
+        throw new PermanentProcessingError("PRESCRIPTION_STORED");
+      }
       const permanent =
         error instanceof PermanentProcessingError ||
         (error instanceof AiExtractionError && !error.transient);

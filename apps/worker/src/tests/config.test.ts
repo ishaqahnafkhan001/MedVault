@@ -3,7 +3,23 @@ import { loadWorkerConfig } from "../config.js";
 
 describe("worker environment", () => {
   it("allows an idle development worker without Gemini", () => {
-    expect(loadWorkerConfig(validEnvironment()).GEMINI_API_KEY).toBe("");
+    const config = loadWorkerConfig(validEnvironment());
+    expect(config.GEMINI_API_KEY).toBe("");
+    expect(config.GEMINI_MODEL).toBe("gemini-3.6-flash");
+  });
+
+  it("preserves an explicit Gemini model override", () => {
+    const config = loadWorkerConfig({
+      ...validEnvironment(),
+      GEMINI_MODEL: "  approved-model-override  ",
+    });
+    expect(config.GEMINI_MODEL).toBe("approved-model-override");
+  });
+
+  it.each(["", " \t "])("rejects an empty Gemini model value", (model) => {
+    expect(() => loadWorkerConfig({ ...validEnvironment(), GEMINI_MODEL: model })).toThrowError(
+      "GEMINI_MODEL",
+    );
   });
 
   it("requires GEMINI_API_KEY in production without exposing other secrets", () => {
@@ -85,6 +101,32 @@ describe("worker environment", () => {
         GEMINI_API_KEY: "configured-test-key",
       }),
     ).not.toThrow();
+  });
+
+  it("refuses a migration-owner credential in the worker process without printing it", () => {
+    const environment = {
+      ...validEnvironment(),
+      MIGRATION_DATABASE_URL:
+        "postgresql://migration:worker-owner-secret@migration.example.test:5432/postgres",
+    };
+    try {
+      loadWorkerConfig(environment);
+      throw new Error("Expected migration credential isolation to fail");
+    } catch (error) {
+      expect(String(error)).toContain("MIGRATION_DATABASE_URL");
+      expect(String(error)).not.toContain("worker-owner-secret");
+      expect(String(error)).not.toContain(environment.MIGRATION_DATABASE_URL);
+    }
+  });
+
+  it.each([
+    ["absent", undefined],
+    ["empty", ""],
+    ["whitespace-only", " \t "],
+  ])("allows a %s migration credential value in the worker environment", (_case, value) => {
+    const environment = validEnvironment();
+    if (value !== undefined) environment.MIGRATION_DATABASE_URL = value;
+    expect(() => loadWorkerConfig(environment)).not.toThrow();
   });
 });
 
