@@ -24,6 +24,7 @@ import type {
   LogIntakeInput,
   MeasurementHistoryDto,
   LatestMetricCardDto,
+  UpdateDocumentInput,
 } from "@medvault/shared";
 
 export interface AuthenticatedUser {
@@ -51,6 +52,11 @@ export interface AppService {
   ): Promise<DocumentDto>;
   listDocuments(authUserId: string, query: DocumentListQuery): Promise<PaginatedDto<DocumentDto>>;
   getDocument(authUserId: string, documentId: string): Promise<DocumentDto>;
+  updateDocument(
+    authUserId: string,
+    documentId: string,
+    input: UpdateDocumentInput,
+  ): Promise<DocumentDto>;
   getFileUrl(authUserId: string, documentId: string): Promise<string>;
   deleteDocument(authUserId: string, documentId: string): Promise<void>;
   listReports(authUserId: string, query: DocumentListQuery): Promise<PaginatedDto<DocumentDto>>;

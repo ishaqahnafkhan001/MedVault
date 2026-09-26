@@ -10,6 +10,7 @@ import type {
   VerifyReportInput,
   AnalysisFilter,
   MeasurementHistoryDto,
+  UpdateDocumentInput,
 } from "@medvault/shared";
 import { createApp } from "../app.js";
 import { AppError, notFound } from "../errors.js";
@@ -94,6 +95,33 @@ describe("authenticated API", () => {
     expect([file.status, deletion.status, retry.status, verificationResponse.status]).toEqual([
       404, 404, 404, 404,
     ]);
+  });
+
+  it("allows updating document details like prescription name, doctor, and date", async () => {
+    const app = testApp();
+    const response = await request(app)
+      .patch(`/v1/documents/${documentA}`)
+      .set("Authorization", "Bearer token-a")
+      .send({
+        testName: "Dr. Smith - Cardiology",
+        hospitalName: "City Hospital",
+        documentDate: "2026-09-25",
+      });
+    expect(response.status).toBe(200);
+    expect(response.body.document.testName).toBe("Dr. Smith - Cardiology");
+    expect(response.body.document.hospitalName).toBe("City Hospital");
+    expect(response.body.document.documentDate).toBe("2026-09-25");
+  });
+
+  it("handles CORS preflight for PATCH requests with proper allowed methods", async () => {
+    const app = testApp();
+    const response = await request(app)
+      .options(`/v1/documents/${documentA}`)
+      .set("Origin", "http://localhost:3000")
+      .set("Access-Control-Request-Method", "PATCH")
+      .set("Access-Control-Request-Headers", "authorization, content-type");
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-methods"]).toContain("PATCH");
   });
 
   it("does not apply the private API rate limit to health checks", async () => {
@@ -320,6 +348,15 @@ class FakeService implements AppService {
     return authUserId === patientA && id === documentA
       ? Promise.resolve()
       : Promise.reject(notFound());
+  }
+  updateDocument(authUserId: string, id: string, input: UpdateDocumentInput) {
+    if (authUserId !== patientA || id !== documentA) return Promise.reject(notFound());
+    return Promise.resolve({
+      ...document(id, authUserId),
+      testName: input.testName ?? null,
+      hospitalName: input.hospitalName ?? null,
+      documentDate: input.documentDate ?? null,
+    });
   }
   listReports(authUserId: string, query: DocumentListQuery) {
     this.lastReportQuery = query;

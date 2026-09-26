@@ -104,7 +104,7 @@ export function UploadForm() {
             onChange={(e) => setHospital(e.target.value)}
           />
         </label>
-        {type === "REPORT" && (
+        {type === "REPORT" ? (
           <>
             <label>
               <span className="label">Test name (if known)</span>
@@ -143,6 +143,17 @@ export function UploadForm() {
               </select>
             </label>
           </>
+        ) : (
+          <label>
+            <span className="label">Prescription title or doctor (optional)</span>
+            <input
+              className="field"
+              maxLength={180}
+              placeholder="e.g. Dr. Rahman - General Checkup"
+              value={test}
+              onChange={(e) => setTest(e.target.value)}
+            />
+          </label>
         )}
       </div>
       <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#edf4f1] p-4 text-sm text-[#36564e]">

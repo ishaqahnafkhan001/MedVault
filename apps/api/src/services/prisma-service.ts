@@ -24,6 +24,7 @@ import type {
   CreateScheduleInput,
   LogIntakeInput,
   MeasurementHistoryDto,
+  UpdateDocumentInput,
 } from "@medvault/shared";
 import {
   normalizeTestName,
@@ -185,6 +186,39 @@ export class PrismaAppService implements AppService {
     });
     if (!document) throw notFound();
     return documentDto(document);
+  }
+
+  async updateDocument(
+    authUserId: string,
+    documentId: string,
+    input: UpdateDocumentInput,
+  ): Promise<DocumentDto> {
+    const patientId = await this.patientId(authUserId);
+    const document = await this.prisma.medicalDocument.findFirst({
+      where: { id: documentId, patientId },
+    });
+    if (!document) throw notFound();
+
+    const updated = await this.prisma.medicalDocument.update({
+      where: { id: documentId },
+      data: {
+        ...(input.testName !== undefined
+          ? {
+              testName: input.testName?.trim() || null,
+              normalizedTestName: input.testName?.trim()
+                ? normalizeTestName(input.testName.trim())
+                : null,
+            }
+          : {}),
+        ...(input.hospitalName !== undefined
+          ? { hospitalName: input.hospitalName?.trim() || null }
+          : {}),
+        ...(input.documentDate !== undefined
+          ? { documentDate: input.documentDate ? parseDate(input.documentDate) : null }
+          : {}),
+      },
+    });
+    return documentDto(updated);
   }
 
   async getFileUrl(authUserId: string, documentId: string): Promise<string> {

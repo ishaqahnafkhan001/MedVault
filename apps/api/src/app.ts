@@ -19,6 +19,7 @@ import {
   updateMedicationSchema,
   createScheduleSchema,
   logIntakeSchema,
+  updateDocumentSchema,
 } from "@medvault/shared";
 import { AppError } from "./errors.js";
 import { authenticate } from "./middleware/auth.js";
@@ -60,7 +61,7 @@ export function createApp(options: CreateAppOptions) {
     cors({
       origin: options.webOrigin,
       credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     }),
   );
   app.get("/", (_request, response) => {
@@ -173,6 +174,18 @@ export function createApp(options: CreateAppOptions) {
           parseId(request.params.id),
         ),
       });
+    }),
+  );
+  app.patch(
+    "/v1/documents/:id",
+    asyncRoute(async (request, response) => {
+      const input = updateDocumentSchema.parse(request.body);
+      const document = await options.service.updateDocument(
+        response.locals.auth.id,
+        parseId(request.params.id),
+        input,
+      );
+      response.json({ document });
     }),
   );
   app.get(

@@ -67,6 +67,16 @@ export const documentMetadataSchema = z
   })
   .strict();
 
+export const updateDocumentSchema = z
+  .object({
+    testName: nullableTrimmed(180),
+    hospitalName: nullableTrimmed(180),
+    documentDate: z.iso.date().nullable().optional(),
+  })
+  .strict();
+
+export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
+
 export const extractionMeasurementSchema = z
   .object({
     name: z.string().trim().min(1).max(180),

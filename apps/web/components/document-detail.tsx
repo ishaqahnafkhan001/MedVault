@@ -1,24 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Check,
   Download,
   FileText,
   LoaderCircle,
   LockKeyhole,
+  Pencil,
   Pill,
   Trash2,
+  X,
 } from "lucide-react";
-import { documentResponseSchema, signedFileResponseSchema } from "@medvault/shared";
+import {
+  documentResponseSchema,
+  signedFileResponseSchema,
+  type UpdateDocumentInput,
+} from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
 import { signedFileRefreshInterval, validatedRequest } from "@/lib/phase2-api";
 import { formatDate } from "./document-card";
 import { StatusBadge } from "./status-badge";
 
 export function DocumentDetail({ id }: { id: string }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editHospital, setEditHospital] = useState("");
+  const [editDate, setEditDate] = useState("");
+
   const documentQuery = useQuery({
     queryKey: ["document", id],
     queryFn: () => validatedRequest(documentResponseSchema, `/v1/documents/${id}`),
@@ -38,6 +51,29 @@ export function DocumentDetail({ id }: { id: string }) {
       router.push("/documents");
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (input: UpdateDocumentInput) =>
+      validatedRequest(documentResponseSchema, `/v1/documents/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (result) => {
+      queryClient.setQueryData(["document", id], result);
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setIsEditing(false);
+    },
+  });
+
+  const startEditing = () => {
+    if (!documentQuery.data) return;
+    const doc = documentQuery.data.document;
+    setEditTitle(doc.testName || "");
+    setEditHospital(doc.hospitalName || "");
+    setEditDate(doc.documentDate ? doc.documentDate.slice(0, 10) : "");
+    setIsEditing(true);
+  };
 
   if (documentQuery.isLoading) {
     return (
@@ -81,8 +117,16 @@ export function DocumentDetail({ id }: { id: string }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <StatusBadge status={document.processingStatus} />
+          <button
+            onClick={startEditing}
+            className="button-secondary inline-flex items-center gap-1.5 px-3 py-2 text-sm"
+            title={`Edit ${document.documentType === "PRESCRIPTION" ? "prescription" : "document"} details`}
+          >
+            <Pencil size={14} className="shrink-0 text-[#176c5b]" />
+            <span>Edit details</span>
+          </button>
           <button
             onClick={() => {
               if (confirm("Are you sure you want to delete this document?")) {
@@ -101,6 +145,112 @@ export function DocumentDetail({ id }: { id: string }) {
           </button>
         </div>
       </div>
+
+      {isEditing && (
+        <section
+          aria-label="Edit document details"
+          className="surface mt-5 rounded-2xl border border-[#b9cbc5] p-5 sm:p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between border-b border-[#e0e8e4] pb-3 mb-4">
+            <div className="flex items-center gap-2 font-bold text-[#142621]">
+              <Pencil size={17} className="text-[#176c5b]" />
+              <span>
+                Edit {document.documentType === "PRESCRIPTION" ? "Prescription" : "Document"} Details
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="text-[#64736f] hover:text-[#142621] transition"
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              updateMutation.mutate({
+                testName: editTitle || null,
+                hospitalName: editHospital || null,
+                documentDate: editDate || null,
+              });
+            }}
+            className="space-y-4"
+          >
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="label">
+                  {document.documentType === "PRESCRIPTION"
+                    ? "Prescription Name / Title"
+                    : "Document Name"}
+                </label>
+                <input
+                  className="field mt-1.5"
+                  maxLength={180}
+                  placeholder={
+                    document.documentType === "PRESCRIPTION"
+                      ? "e.g. Dr. Rahman - Cardiology"
+                      : "e.g. CBC Blood Test"
+                  }
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="label">Doctor / Hospital / Clinic</label>
+                <input
+                  className="field mt-1.5"
+                  maxLength={180}
+                  placeholder="e.g. Apollo Hospital"
+                  value={editHospital}
+                  onChange={(e) => setEditHospital(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Date</label>
+                <input
+                  type="date"
+                  className="field mt-1.5"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
+              </div>
+            </div>
+            {updateMutation.isError && (
+              <p role="alert" className="rounded-xl bg-[#f8e4e4] p-3 text-sm text-[#963e42]">
+                {updateMutation.error instanceof Error
+                  ? updateMutation.error.message
+                  : "Failed to update document."}
+              </p>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                className="button-secondary text-sm"
+                onClick={() => setIsEditing(false)}
+                disabled={updateMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="button-primary inline-flex items-center gap-1.5 text-sm"
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? (
+                  <LoaderCircle size={15} className="shrink-0 animate-spin" />
+                ) : (
+                  <Check size={15} className="shrink-0" />
+                )}
+                <span>Save changes</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
       {document.documentType === "PRESCRIPTION" && (
         <div className="mt-6 flex items-start gap-3 rounded-2xl bg-[#edf4f1] p-4 text-sm text-[#36564e]">
           <LockKeyhole className="mt-0.5 shrink-0" size={17} />
