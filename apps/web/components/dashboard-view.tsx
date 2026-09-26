@@ -26,39 +26,47 @@ export function DashboardView() {
           <p className="muted mt-2">Everything important, verified and easy to find.</p>
         </div>
         <Link href="/documents/upload" className="button-primary">
-          <Plus size={18} /> Upload document
+          <Plus size={16} className="shrink-0" /> <span>Upload document</span>
         </Link>
       </div>
       <section className="mt-8 grid gap-4 sm:grid-cols-3" aria-label="Report status summary">
-        <Stat label="Processing" value={counts.processing} icon={<LoaderCircle />} tone="blue" />
+        <Stat
+          label="Processing"
+          value={counts.processing}
+          icon={<LoaderCircle size={20} className="shrink-0 animate-spin" />}
+          tone="blue"
+        />
         <Stat
           label="Needs your review"
           value={counts.needsReview}
-          icon={<CircleAlert />}
+          icon={<CircleAlert size={20} className="shrink-0" />}
           tone="amber"
         />
         <Stat
           label="Verified reports"
           value={counts.verified}
-          icon={<ShieldCheck />}
+          icon={<ShieldCheck size={20} className="shrink-0" />}
           tone="green"
         />
       </section>
       {counts.needsReview > 0 && (
         <Link
           href="/reports?status=NEEDS_REVIEW"
-          className="mt-6 flex items-center gap-4 rounded-2xl border border-[#ebc988] bg-[#fff8e9] p-4 text-[#704918]"
+          className="group mt-6 flex items-center gap-4 rounded-2xl border border-[#ebc988] bg-[#fff8e9] p-4 text-[#704918] transition hover:shadow-xs hover:border-[#df9c4a]"
         >
-          <CircleAlert className="shrink-0" />
+          <CircleAlert className="shrink-0 text-[#8b5a17]" size={20} />
           <div className="flex-1">
             <p className="font-extrabold">
               {counts.needsReview} report{counts.needsReview === 1 ? "" : "s"} ready to verify
             </p>
-            <p className="mt-0.5 text-sm">
+            <p className="mt-0.5 text-sm text-[#704918]/90">
               Compare the extracted information with the original report.
             </p>
           </div>
-          <ArrowRight />
+          <ArrowRight
+            size={18}
+            className="shrink-0 transition-transform group-hover:translate-x-1"
+          />
         </Link>
       )}
       <section className="mt-9">
@@ -67,8 +75,15 @@ export function DashboardView() {
             <p className="eyebrow">Verified history</p>
             <h2 className="mt-1 text-xl font-extrabold">Latest values by metric</h2>
           </div>
-          <Link href="/history" className="text-sm font-bold text-[#176c5b]">
-            Open test history
+          <Link
+            href="/history"
+            className="group inline-flex items-center gap-1.5 text-sm font-bold text-[#176c5b] transition hover:text-[#0e4f43]"
+          >
+            <span>Open test history</span>
+            <ArrowRight
+              size={14}
+              className="shrink-0 transition-transform group-hover:translate-x-0.5"
+            />
           </Link>
         </div>
         {latestMetrics.length ? (
@@ -87,7 +102,7 @@ export function DashboardView() {
           </>
         ) : (
           <Empty
-            icon={<FileCheck2 />}
+            icon={<FileCheck2 size={24} className="shrink-0" />}
             text="Latest values appear after a report’s measurements and clinical date are reviewed."
           />
         )}
@@ -95,8 +110,15 @@ export function DashboardView() {
       <section className="mt-9">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-extrabold">Recent documents</h2>
-          <Link href="/documents" className="text-sm font-bold text-[#176c5b]">
-            Browse documents
+          <Link
+            href="/documents"
+            className="group inline-flex items-center gap-1.5 text-sm font-bold text-[#176c5b] transition hover:text-[#0e4f43]"
+          >
+            <span>Browse documents</span>
+            <ArrowRight
+              size={14}
+              className="shrink-0 transition-transform group-hover:translate-x-0.5"
+            />
           </Link>
         </div>
         {recentDocuments.length ? (
@@ -106,7 +128,10 @@ export function DashboardView() {
             ))}
           </div>
         ) : (
-          <Empty icon={<Plus />} text="Upload your first medical report or prescription." />
+          <Empty
+            icon={<Plus size={24} className="shrink-0" />}
+            text="Upload your first medical report or prescription."
+          />
         )}
       </section>
     </div>

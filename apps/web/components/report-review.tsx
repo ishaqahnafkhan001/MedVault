@@ -144,9 +144,9 @@ export function ReportReview({ id }: { id: string }) {
     <div className="mx-auto max-w-[1500px]">
       <Link
         href="/reports"
-        className="muted inline-flex items-center gap-2 text-sm font-bold hover:text-[#176c5b]"
+        className="muted inline-flex items-center gap-2 text-sm font-semibold transition hover:text-[#176c5b]"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={16} className="shrink-0" />
         Back to reports
       </Link>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-3">
@@ -169,13 +169,13 @@ export function ReportReview({ id }: { id: string }) {
               }
             }}
             disabled={deleteMutation.isPending}
-            className="button-secondary text-red-600 hover:bg-red-50 hover:border-red-200"
+            className="button-secondary inline-flex items-center justify-center p-2.5 text-[#a63d40] transition hover:bg-red-50 hover:border-red-200"
             title="Delete report"
           >
             {deleteMutation.isPending ? (
-              <LoaderCircle className="animate-spin" size={16} />
+              <LoaderCircle className="shrink-0 animate-spin" size={16} />
             ) : (
-              <Trash2 size={16} />
+              <Trash2 size={16} className="shrink-0" />
             )}
           </button>
         </div>
@@ -204,9 +204,9 @@ export function ReportReview({ id }: { id: string }) {
             className={`mt-7 flex items-start gap-3 rounded-2xl p-4 text-sm ${report.processingStatus === "VERIFIED" ? "bg-[#e4f2ec] text-[#176c5b]" : "bg-[#fff3dc] text-[#75501f]"}`}
           >
             {report.processingStatus === "VERIFIED" ? (
-              <CheckCircle2 className="shrink-0" />
+              <CheckCircle2 className="shrink-0 text-[#176c5b]" size={18} />
             ) : (
-              <ShieldAlert className="shrink-0" />
+              <ShieldAlert className="shrink-0 text-[#aa6912]" size={18} />
             )}
             <p className="font-semibold">
               {report.processingStatus === "VERIFIED"
@@ -223,9 +223,13 @@ export function ReportReview({ id }: { id: string }) {
                     href={fileQuery.data.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-sm font-bold text-[#176c5b]"
+                    className="group inline-flex items-center gap-1 text-sm font-bold text-[#176c5b] hover:text-[#0e4f43]"
                   >
-                    Open <ExternalLink size={14} />
+                    <span>Open</span>
+                    <ExternalLink
+                      size={13}
+                      className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    />
                   </a>
                 )}
               </div>
@@ -422,9 +426,14 @@ function ReviewForm({
       <button
         onClick={save}
         disabled={saving || !verifyReportSchema.safeParse(form).success}
-        className="button-primary mt-6 w-full"
+        className="button-primary mt-6 inline-flex w-full items-center justify-center gap-2"
       >
-        {saving && <LoaderCircle className="animate-spin" size={17} />}Verify &amp; Save
+        {saving ? (
+          <LoaderCircle className="shrink-0 animate-spin" size={17} />
+        ) : (
+          <CheckCircle2 size={17} className="shrink-0" />
+        )}
+        <span>Verify &amp; Save</span>
       </button>
     </div>
   );
@@ -757,14 +766,25 @@ function FailureMessage({
   if (failureCode === "AI_UNAVAILABLE" || failureCode === "QUEUE_UNAVAILABLE") {
     return (
       <div className="surface mt-8 rounded-2xl p-7 text-center">
-        <RefreshCw className="mx-auto text-[#aa6912]" />
-        <h2 className="mt-3 text-xl font-extrabold">Checker unavailable</h2>
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fdf0dc]">
+          <RefreshCw className="shrink-0 text-[#aa6912]" size={26} />
+        </div>
+        <h2 className="text-xl font-extrabold">Checker unavailable</h2>
         <p className="muted mx-auto mt-2 max-w-md text-sm">
           We could not check your document because the checking service is temporarily unavailable.
           Your file has not been rejected. Please try again later.
         </p>
-        <button className="button-primary mt-5" disabled={retrying} onClick={onRetry}>
-          {retrying && <LoaderCircle size={16} className="animate-spin" />}Retry
+        <button
+          className="button-primary mt-5 inline-flex items-center gap-2"
+          disabled={retrying}
+          onClick={onRetry}
+        >
+          {retrying ? (
+            <LoaderCircle size={16} className="shrink-0 animate-spin" />
+          ) : (
+            <RefreshCw size={15} className="shrink-0" />
+          )}
+          <span>Retry</span>
         </button>
       </div>
     );
@@ -772,14 +792,25 @@ function FailureMessage({
 
   return (
     <div className="surface mt-8 rounded-2xl p-7 text-center">
-      <RefreshCw className="mx-auto text-[#a63d40]" />
-      <h2 className="mt-3 text-xl font-extrabold">Analysis failure</h2>
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#fae8e8]">
+        <RefreshCw className="shrink-0 text-[#a63d40]" size={26} />
+      </div>
+      <h2 className="text-xl font-extrabold">Analysis failure</h2>
       <p className="muted mx-auto mt-2 max-w-md text-sm">
         Your document passed the initial check, but analysis could not be completed. Please retry.
         Your uploaded file is still available.
       </p>
-      <button className="button-primary mt-5" disabled={retrying} onClick={onRetry}>
-        {retrying && <LoaderCircle size={16} className="animate-spin" />}Retry processing
+      <button
+        className="button-primary mt-5 inline-flex items-center gap-2"
+        disabled={retrying}
+        onClick={onRetry}
+      >
+        {retrying ? (
+          <LoaderCircle size={16} className="shrink-0 animate-spin" />
+        ) : (
+          <RefreshCw size={15} className="shrink-0" />
+        )}
+        <span>Retry processing</span>
       </button>
     </div>
   );

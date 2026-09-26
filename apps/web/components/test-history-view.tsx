@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, FileSearch, LoaderCircle, Search } from "lucide-react";
+import { CircleAlert, FileSearch, LoaderCircle, Search, X } from "lucide-react";
 import { measurementHistoryResponseSchema, type MetricExplanationDto } from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
 import { LatestMetricCard } from "./latest-metric-card";
@@ -44,19 +44,31 @@ export function TestHistoryView({ initialMetric = "" }: { initialMetric?: string
 
       <section className="surface mt-7 rounded-2xl p-4" aria-label="Test history filters">
         <div className="grid gap-3 md:grid-cols-3">
-          <label className="relative">
+          <div className="relative">
             <span className="sr-only">Test or measurement</span>
             <Search
-              className="pointer-events-none absolute left-3 top-3 text-[#77857f]"
-              size={18}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 shrink-0 text-[#77857f]"
+              size={17}
             />
             <input
-              className="field pl-10"
+              type="text"
+              className="field field-search !pl-10.5 pr-9"
               value={metric}
               onChange={(event) => setMetric(event.target.value)}
-              placeholder="Test or measurement"
+              placeholder="Search tests or measurements (e.g. Hemoglobin)"
             />
-          </label>
+            {metric && (
+              <button
+                type="button"
+                onClick={() => setMetric("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#77857f] transition hover:bg-[#eef3f0] hover:text-[#162522]"
+                aria-label="Clear measurement search"
+                title="Clear measurement search"
+              >
+                <X size={15} className="shrink-0" />
+              </button>
+            )}
+          </div>
           <label>
             <span className="sr-only">Clinical date from</span>
             <input
@@ -139,10 +151,31 @@ export function TestHistoryView({ initialMetric = "" }: { initialMetric?: string
               </div>
             ) : (
               <div className="mt-4 rounded-2xl border border-dashed border-[#cbd8d3] p-8 text-center">
-                <FileSearch className="mx-auto text-[#75a496]" aria-hidden="true" />
-                <p className="muted mt-3 text-sm">
-                  No patient-reviewed measurements match these filters.
+                <FileSearch
+                  className="mx-auto shrink-0 text-[#75a496]"
+                  size={32}
+                  aria-hidden="true"
+                />
+                <p className="mt-3 font-extrabold text-[#162522]">
+                  {metric
+                    ? `No measurements matching "${metric}"`
+                    : "No patient-reviewed measurements found"}
                 </p>
+                <p className="muted mt-1 text-sm">
+                  {metric
+                    ? "Check the test name or clear the search to view all metrics."
+                    : "No patient-reviewed measurements match these filters."}
+                </p>
+                {metric && (
+                  <button
+                    type="button"
+                    onClick={() => setMetric("")}
+                    className="button-secondary mt-4 inline-flex items-center gap-1.5 text-xs font-bold"
+                  >
+                    <X size={14} className="shrink-0" />
+                    <span>Clear search</span>
+                  </button>
+                )}
               </div>
             )}
           </section>

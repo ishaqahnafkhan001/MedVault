@@ -43,20 +43,20 @@ export function AppShell({ children, email }: { children: ReactNode; email: stri
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[250px_1fr]">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#dce5e1] bg-[#f7f8f3]/95 px-5 py-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#dce5e1] bg-[#f7f8f3]/95 px-5 py-3.5 backdrop-blur lg:hidden">
         <Link href="/dashboard" className="font-display text-xl font-extrabold text-[#154f44]">
           MedVault<span className="text-[#df9c4a]">.</span>
         </Link>
         <button
-          className="rounded-lg p-2"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#dce5e1] bg-white text-[#154f44] shadow-xs"
           onClick={() => setOpen(!open)}
           aria-label="Toggle navigation"
         >
-          {open ? <X /> : <Menu />}
+          {open ? <X size={18} /> : <Menu size={18} />}
         </button>
       </header>
       <aside
-        className={`${open ? "block" : "hidden"} fixed inset-x-0 top-[65px] z-20 border-b border-[#dce5e1] bg-[#163b34] p-5 text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:border-0 lg:p-6`}
+        className={`${open ? "block" : "hidden"} fixed inset-x-0 top-[61px] z-20 border-b border-[#dce5e1] bg-[#163b34] p-5 text-white lg:sticky lg:top-0 lg:block lg:h-screen lg:border-0 lg:p-6`}
       >
         <Link href="/dashboard" className="hidden font-display text-2xl font-extrabold lg:block">
           MedVault<span className="text-[#e8ab61]">.</span>
@@ -70,10 +70,10 @@ export function AppShell({ children, email }: { children: ReactNode; email: stri
                 onClick={() => setOpen(false)}
                 key={href}
                 href={href}
-                className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-bold transition ${active ? "bg-white text-[#174c42]" : "text-[#cde0da] hover:bg-white/8 hover:text-white"}`}
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-bold transition ${active ? "bg-white text-[#174c42] shadow-xs" : "text-[#cde0da] hover:bg-white/8 hover:text-white"}`}
               >
-                <Icon size={18} />
-                {label}
+                <Icon size={18} className="shrink-0" />
+                <span className="truncate">{label}</span>
               </Link>
             );
           })}
@@ -84,7 +84,7 @@ export function AppShell({ children, email }: { children: ReactNode; email: stri
             onClick={logout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-[#cde0da] hover:bg-white/8 hover:text-white"
           >
-            <LogOut size={17} /> Sign out
+            <LogOut size={16} className="shrink-0" /> <span>Sign out</span>
           </button>
         </div>
       </aside>

@@ -63,14 +63,14 @@ export function DocumentDetail({ id }: { id: string }) {
     <div className="mx-auto max-w-6xl">
       <Link
         href="/documents"
-        className="muted inline-flex items-center gap-2 text-sm font-bold hover:text-[#176c5b]"
+        className="muted inline-flex items-center gap-2 text-sm font-semibold transition hover:text-[#176c5b]"
       >
-        <ArrowLeft size={16} /> Back to documents
+        <ArrowLeft size={16} className="shrink-0" /> Back to documents
       </Link>
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="rounded-2xl bg-[#f3eadc] p-3 text-[#95621f]">
-            <Icon />
+          <div className="rounded-2xl bg-[#f3eadc] p-3 text-[#95621f] shrink-0">
+            <Icon size={24} className="shrink-0" />
           </div>
           <div>
             <p className="eyebrow">{document.documentType.toLowerCase()}</p>
@@ -90,13 +90,13 @@ export function DocumentDetail({ id }: { id: string }) {
               }
             }}
             disabled={deleteMutation.isPending}
-            className="button-secondary text-red-600 hover:bg-red-50 hover:border-red-200"
+            className="button-secondary inline-flex items-center justify-center p-2.5 text-[#a63d40] transition hover:bg-red-50 hover:border-red-200"
             title="Delete document"
           >
             {deleteMutation.isPending ? (
-              <LoaderCircle className="animate-spin" size={16} />
+              <LoaderCircle className="shrink-0 animate-spin" size={16} />
             ) : (
-              <Trash2 size={16} />
+              <Trash2 size={16} className="shrink-0" />
             )}
           </button>
         </div>
@@ -120,9 +120,9 @@ export function DocumentDetail({ id }: { id: string }) {
               href={fileQuery.data.url}
               target="_blank"
               rel="noreferrer"
-              className="button-secondary"
+              className="button-secondary inline-flex items-center gap-1.5 text-sm"
             >
-              <Download size={15} /> Open file
+              <Download size={15} className="shrink-0" /> Open file
             </a>
           )}
         </div>

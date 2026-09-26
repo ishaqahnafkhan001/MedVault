@@ -17,18 +17,18 @@
 
 ## Execution phases
 
-| Phase | State       | Completed subtasks                            |
-| ----- | ----------- | --------------------------------------------- |
-| EX-01 | VERIFIED    | 01.1, 01.2, 01.3, 01.4, 01.5                  |
-| EX-02 | BLOCKED     | 02.1, 02.2, 02.3                              |
-| EX-03 | VERIFIED    | 03.1, 03.2, 03.3, 03.4, 03.5                  |
-| EX-04 | BLOCKED     | 04.1, 04.2, 04.3, 04.4, 04.5 independent work |
+| Phase | State       | Completed subtasks                                |
+| ----- | ----------- | ------------------------------------------------- |
+| EX-01 | VERIFIED    | 01.1, 01.2, 01.3, 01.4, 01.5                      |
+| EX-02 | BLOCKED     | 02.1, 02.2, 02.3                                  |
+| EX-03 | VERIFIED    | 03.1, 03.2, 03.3, 03.4, 03.5                      |
+| EX-04 | BLOCKED     | 04.1, 04.2, 04.3, 04.4, 04.5 independent work     |
 | EX-05 | BLOCKED     | 05.1, 05.2, 05.3 inspection, 05.4, 05.6 automated |
-| EX-06 | NOT_STARTED | none                                          |
-| EX-07 | NOT_STARTED | none                                          |
-| EX-08 | NOT_STARTED | none                                          |
-| EX-09 | NOT_STARTED | none                                          |
-| EX-10 | NOT_STARTED | none                                          |
+| EX-06 | NOT_STARTED | none                                              |
+| EX-07 | NOT_STARTED | none                                              |
+| EX-08 | NOT_STARTED | none                                              |
+| EX-09 | NOT_STARTED | none                                              |
+| EX-10 | NOT_STARTED | none                                              |
 
 ## Current phase acceptance
 

@@ -35,16 +35,21 @@ export default function HomePage() {
             Securely keep reports and prescriptions, verify extracted report details, and find the
             result you need without digging through folders.
           </p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <Link href="/auth/register" className="button-primary px-5 py-3">
-              Start your vault <ArrowRight size={18} />
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            <Link href="/auth/register" className="button-primary group px-6 py-3.5">
+              <span>Start your vault</span>
+              <ArrowRight
+                size={16}
+                className="shrink-0 transition-transform group-hover:translate-x-1"
+              />
             </Link>
-            <Link href="/auth/login" className="button-secondary px-5 py-3">
+            <Link href="/auth/login" className="button-secondary px-6 py-3.5">
               I already have an account
             </Link>
           </div>
           <p className="mt-5 flex items-center gap-2 text-sm text-[#6c7a76]">
-            <LockKeyhole size={15} /> Private storage. You verify every AI-extracted result.
+            <LockKeyhole size={15} className="shrink-0 text-[#176c5b]" />
+            <span>Private storage. You verify every AI-extracted result.</span>
           </p>
         </div>
         <div className="relative">
@@ -55,10 +60,10 @@ export default function HomePage() {
                 <p className="text-xs font-bold uppercase tracking-widest text-[#75827e]">
                   Illustrative dashboard
                 </p>
-                <h2 className="mt-1 text-2xl font-extrabold">Latest reports</h2>
+                <h2 className="mt-1 text-2xl font-extrabold text-[#132d28]">Latest reports</h2>
               </div>
-              <div className="rounded-full bg-[#e5f2ed] p-3 text-[#176c5b]">
-                <FileCheck2 />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e5f2ed] text-[#176c5b]">
+                <FileCheck2 size={20} className="shrink-0" />
               </div>
             </div>
             {[
@@ -68,26 +73,26 @@ export default function HomePage() {
             ].map(([name, date, status], i) => (
               <div
                 key={name}
-                className="mb-3 flex items-center gap-4 rounded-2xl border border-[#e4ebe8] bg-white p-4"
+                className="mb-3 flex items-center gap-4 rounded-2xl border border-[#e4ebe8] bg-white p-4 shadow-2xs"
               >
                 <div
-                  className={`h-11 w-1 rounded-full ${i === 0 ? "bg-[#df9c4a]" : "bg-[#72a999]"}`}
+                  className={`h-10 w-1 shrink-0 rounded-full ${i === 0 ? "bg-[#df9c4a]" : "bg-[#72a999]"}`}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold">{name}</p>
-                  <p className="mt-1 text-sm text-[#74827e]">{date}</p>
+                  <p className="truncate font-bold text-[#162522]">{name}</p>
+                  <p className="mt-0.5 text-xs text-[#74827e]">{date}</p>
                 </div>
-                <span className="flex items-center gap-1 rounded-full bg-[#eaf4ef] px-2.5 py-1 text-xs font-bold text-[#176c5b]">
-                  <CheckCircle2 size={13} />
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#eaf4ef] px-2.5 py-1 text-xs font-extrabold text-[#176c5b]">
+                  <CheckCircle2 size={13} className="shrink-0" />
                   {status}
                 </span>
               </div>
             ))}
-            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#173a33] p-4 text-white">
-              <Search className="text-[#9ccbbd]" />
-              <div>
+            <div className="mt-6 flex items-center gap-3.5 rounded-2xl bg-[#173a33] p-4 text-white">
+              <Search size={18} className="shrink-0 text-[#9ccbbd]" />
+              <div className="min-w-0 flex-1">
                 <p className="font-bold">Searchable, verified history</p>
-                <p className="text-sm text-[#bdd5ce]">
+                <p className="text-xs text-[#bdd5ce]">
                   Latest report date takes priority—not upload date.
                 </p>
               </div>

@@ -1,6 +1,7 @@
 "use client";
 import { useId, useState } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   measurementSeriesSchema,
   formatClinicalDate,
@@ -20,9 +21,11 @@ export function TrendChart({ series }: { series: MeasurementSeriesDto }) {
   );
   if (!points.length)
     return (
-      <div className="rounded-xl border border-dashed p-8">
-        <p>No plottable observations.</p>
-        <p>Unknown dates, bounded and qualitative results remain available in the table.</p>
+      <div className="rounded-2xl border border-dashed border-[#ccd9d4] bg-[#fafbf9] p-8 text-center">
+        <p className="font-bold text-[#142621]">No plottable observations.</p>
+        <p className="muted mt-1 text-xs">
+          Unknown dates, bounded and qualitative results remain available in the table.
+        </p>
       </div>
     );
   const width = 800,
@@ -57,11 +60,11 @@ export function TrendChart({ series }: { series: MeasurementSeriesDto }) {
     .join(" ");
   const active = points.find((p) => p.measurementId === selected);
   return (
-    <div className="space-y-3 rounded-xl border bg-white p-4">
-      <h3 id={titleId} className="font-semibold">
+    <div className="space-y-4 rounded-2xl border border-[#dce5e1] bg-white p-5 sm:p-6 shadow-sm">
+      <h3 id={titleId} className="font-extrabold text-base text-[#142621]">
         {data.normalizedTestName} — {data.canonicalUnit ?? "unit unknown"}
       </h3>
-      <p className="text-sm">
+      <p className="muted text-sm">
         Comparability:{" "}
         {data.comparability === "UNCERTAIN"
           ? "uncertain; context is incomplete"
@@ -69,12 +72,14 @@ export function TrendChart({ series }: { series: MeasurementSeriesDto }) {
         . Changes do not establish clinical significance.
       </p>
       {!band && (
-        <p data-testid="range-unavailable" className="text-sm">
+        <p data-testid="range-unavailable" className="text-xs text-[#859490]">
           No common reference band: ranges differ, are missing, or cannot be safely interpreted. See
           each source range in the table.
         </p>
       )}
-      {points.length === 1 && <p>One observation; no trend can be established.</p>}
+      {points.length === 1 && (
+        <p className="muted text-sm">One observation; no trend can be established.</p>
+      )}
       <div className="overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -152,22 +157,29 @@ export function TrendChart({ series }: { series: MeasurementSeriesDto }) {
         </svg>
       </div>
       {active && (
-        <div role="status" className="rounded border p-3">
-          <p>
+        <div role="status" className="rounded-xl border border-[#dce5e1] bg-[#f4f8f6] p-4 text-sm">
+          <p className="font-bold text-[#142621]">
             {formatClinicalDate(active.reportDate)}: {displayNumber(active.numericValue)}{" "}
             {active.unit}
           </p>
-          <p>
+          <p className="muted mt-0.5 text-xs">
             Source range: {active.referenceRange ?? "Unknown"} · Source flag:{" "}
             {active.sourceFlag ?? "Unknown"}
           </p>
-          <Link className="text-emerald-700 underline" href={`/reports/${active.reportId}`}>
-            View source report
+          <Link
+            className="group mt-2 inline-flex items-center gap-1 font-bold text-[#176c5b] hover:text-[#0e4f43]"
+            href={`/reports/${active.reportId}`}
+          >
+            <span>View source report</span>
+            <ArrowRight
+              size={13}
+              className="shrink-0 transition-transform group-hover:translate-x-0.5"
+            />
           </Link>
         </div>
       )}
       {points.length < data.points.length && (
-        <p>
+        <p className="muted text-xs">
           Some results are not plotted. Bounded/qualitative results and unknown dates are preserved
           in the table.
         </p>

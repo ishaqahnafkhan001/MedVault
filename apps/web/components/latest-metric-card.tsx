@@ -34,13 +34,29 @@ export function LatestMetricCard({ card }: { card: LatestMetricCardDto }) {
           <dd>{card.comparability === "ESTABLISHED" ? "Context matched" : "Context uncertain"}</dd>
         </div>
       </dl>
-      <p className="muted mt-3 text-xs">{card.explanation.uncertainty}</p>
-      <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold text-[#176c5b]">
-        <Link href={`/history?metric=${encodeURIComponent(card.normalizedTestName)}`}>
-          View test history <ArrowRight className="inline" size={15} />
+      {card.explanation.uncertainty && (
+        <p className="muted mt-3 text-xs">{card.explanation.uncertainty}</p>
+      )}
+      <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-bold text-[#176c5b]">
+        <Link
+          href={`/history?metric=${encodeURIComponent(card.normalizedTestName)}`}
+          className="group inline-flex items-center gap-1.5 transition hover:text-[#0e4f43]"
+        >
+          <span>View test history</span>
+          <ArrowRight
+            size={14}
+            className="shrink-0 transition-transform group-hover:translate-x-0.5"
+          />
         </Link>
-        <Link href={`/reports/${point.reportId}`}>
-          Original report <ExternalLink className="inline" size={14} />
+        <Link
+          href={`/reports/${point.reportId}`}
+          className="group inline-flex items-center gap-1.5 transition hover:text-[#0e4f43]"
+        >
+          <span>Original report</span>
+          <ExternalLink
+            size={13}
+            className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
         </Link>
       </div>
     </article>

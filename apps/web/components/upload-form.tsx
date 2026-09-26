@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { FileScan, FileText, LoaderCircle, LockKeyhole, Pill } from "lucide-react";
+import { FileScan, FileText, LoaderCircle, LockKeyhole, Pill, Upload } from "lucide-react";
 import type { DocumentDto, DocumentType, ReportCategory } from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
 
@@ -58,9 +58,9 @@ export function UploadForm() {
               />
               <span className="flex items-center gap-3 font-extrabold">
                 {value === "REPORT" ? (
-                  <FileText className="text-[#176c5b]" />
+                  <FileText className="shrink-0 text-[#176c5b]" size={20} />
                 ) : (
-                  <Pill className="text-[#9b641e]" />
+                  <Pill className="shrink-0 text-[#9b641e]" size={20} />
                 )}
                 {value === "REPORT" ? "Medical report" : "Prescription"}
               </span>
@@ -73,8 +73,8 @@ export function UploadForm() {
           ))}
         </div>
       </fieldset>
-      <label className="mt-6 grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-[#b9cbc5] bg-[#fafbf8] p-8 text-center hover:border-[#6f9f91]">
-        <FileScan className="mb-3 text-[#176c5b]" size={30} />
+      <label className="mt-6 grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed border-[#b9cbc5] bg-[#fafbf8] p-8 text-center transition hover:border-[#6f9f91]">
+        <FileScan className="mb-3 shrink-0 text-[#176c5b]" size={30} />
         <span className="font-extrabold">{file ? file.name : "Choose PDF or image"}</span>
         <span className="muted mt-1 text-xs">PDF, JPG, PNG, or WebP · up to 15 MB</span>
         <input
@@ -154,9 +154,17 @@ export function UploadForm() {
           {mutation.error.message}
         </p>
       )}
-      <button className="button-primary mt-6 w-full sm:w-auto" disabled={mutation.isPending}>
-        {mutation.isPending && <LoaderCircle className="animate-spin" size={17} />}{" "}
-        {mutation.isPending ? "Uploading…" : "Upload securely"}
+      <button
+        type="submit"
+        className="button-primary mt-6 inline-flex w-full items-center justify-center gap-2 sm:w-auto"
+        disabled={mutation.isPending}
+      >
+        {mutation.isPending ? (
+          <LoaderCircle className="shrink-0 animate-spin" size={17} />
+        ) : (
+          <Upload size={17} className="shrink-0" />
+        )}
+        <span>{mutation.isPending ? "Uploading…" : "Upload securely"}</span>
       </button>
     </form>
   );

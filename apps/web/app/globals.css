@@ -69,6 +69,9 @@ a {
   box-shadow: 0 0 0 3px rgba(23, 108, 91, 0.1);
   outline: none;
 }
+.field-search {
+  padding-left: 2.65rem !important;
+}
 .label {
   display: block;
   margin-bottom: 0.4rem;
@@ -141,6 +144,10 @@ a {
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
 }

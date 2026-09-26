@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, LogIn, UserPlus } from "lucide-react";
 import type { PatientProfileDto } from "@medvault/shared";
 import { apiRequest } from "@/lib/api";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -98,9 +98,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           {message}
         </p>
       )}
-      <button className="button-primary mt-6 w-full py-3" disabled={loading}>
-        {loading && <LoaderCircle size={17} className="animate-spin" />}
-        {mode === "login" ? "Sign in" : "Create account"}
+      <button
+        type="submit"
+        className="button-primary mt-6 inline-flex w-full items-center justify-center gap-2 py-3"
+        disabled={loading}
+      >
+        {loading ? (
+          <LoaderCircle size={17} className="shrink-0 animate-spin" />
+        ) : mode === "login" ? (
+          <LogIn size={17} className="shrink-0" />
+        ) : (
+          <UserPlus size={17} className="shrink-0" />
+        )}
+        <span>{mode === "login" ? "Sign in" : "Create account"}</span>
       </button>
       <p className="muted mt-6 text-center text-sm">
         {mode === "login" ? "New to MedVault?" : "Already have an account?"}{" "}

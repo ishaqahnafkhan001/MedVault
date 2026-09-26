@@ -35,7 +35,7 @@ export function StatusBadge({ status }: { status: ProcessingStatus }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-extrabold ${styles[status]}`}
     >
-      <Icon size={13} />
+      <Icon size={13} className="shrink-0" />
       {labels[status]}
     </span>
   );

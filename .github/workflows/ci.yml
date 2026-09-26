@@ -1,0 +1,68 @@
+name: MedVault CI
+
+on:
+  push:
+    branches: [main, antigravity]
+  pull_request:
+    branches: [main, antigravity]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/medvault?sslmode=disable"
+      MEDVAULT_ALLOW_LOCAL_DATABASE: "true"
+      REDIS_URL: "redis://localhost:6379"
+      MEDVAULT_ALLOW_LOCAL_REDIS: "true"
+      NEXT_PUBLIC_ALLOW_LOCAL_API: "true"
+      NEXT_PUBLIC_SUPABASE_URL: "https://mock-project.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key-for-ci"
+      NEXT_PUBLIC_API_URL: "http://localhost:4000"
+      SUPABASE_URL: "https://mock-project.supabase.co"
+      SUPABASE_ANON_KEY: "mock-anon-key-for-ci"
+      SUPABASE_SERVICE_ROLE_KEY: "mock-service-role-key-for-ci"
+      GEMINI_API_KEY: ""
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Verify Code Style (Prettier)
+        run: pnpm format:check
+
+      - name: Run Linters (ESLint via Turbo)
+        run: pnpm lint
+
+      - name: Run Typechecks (TypeScript via Turbo)
+        run: pnpm typecheck
+
+      - name: Run Unit Tests (Vitest)
+        run: pnpm test
+
+      - name: Verify Production Builds (Next.js & TypeScript packages)
+        run: pnpm build

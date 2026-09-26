@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, FileSearch, LoaderCircle, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileSearch, LoaderCircle, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type {
   DocumentDto,
@@ -60,28 +60,47 @@ export function HistoryView({ reportsOnly = false }: { reportsOnly?: boolean }) 
           </p>
         </div>
         <Link href="/documents/upload" className="button-primary">
-          <Plus size={18} />
-          Upload
+          <Plus size={16} className="shrink-0" />
+          <span>Upload</span>
         </Link>
       </div>
       <section className="surface mt-7 rounded-2xl p-4" aria-label="History filters">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="relative xl:col-span-2">
+          <div className="relative xl:col-span-2">
             <span className="sr-only">Search</span>
             <Search
-              className="pointer-events-none absolute left-3 top-3 text-[#77857f]"
-              size={18}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 shrink-0 text-[#77857f]"
+              size={17}
             />
             <input
-              className="field pl-10"
-              placeholder="Search tests, hospitals, filenames"
+              type="text"
+              className="field field-search !pl-10.5 pr-9"
+              placeholder={
+                reportsOnly
+                  ? "Search reports by test name, hospital, or lab..."
+                  : "Search documents by test, hospital, or filename..."
+              }
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
             />
-          </label>
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#77857f] transition hover:bg-[#eef3f0] hover:text-[#162522]"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <X size={15} className="shrink-0" />
+              </button>
+            )}
+          </div>
           {!reportsOnly && (
             <select
               aria-label="Document type"
@@ -178,6 +197,25 @@ export function HistoryView({ reportsOnly = false }: { reportsOnly?: boolean }) 
           </label>
         </div>
       </section>
+      {search && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#eef6f3] px-4 py-2.5 text-xs text-[#176c5b]">
+          <span className="font-medium">
+            Showing results for:{" "}
+            <strong className="font-extrabold text-[#142621]">"{search}"</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setPage(1);
+            }}
+            className="inline-flex items-center gap-1 font-bold text-[#176c5b] hover:text-[#0e4f43]"
+          >
+            <X size={13} className="shrink-0" />
+            <span>Clear search</span>
+          </button>
+        </div>
+      )}
       {query.isLoading ? (
         <div className="grid min-h-64 place-items-center">
           <LoaderCircle className="animate-spin text-[#176c5b]" />
@@ -199,16 +237,17 @@ export function HistoryView({ reportsOnly = false }: { reportsOnly?: boolean }) 
           <div className="mt-6 flex items-center justify-between">
             <p className="muted text-sm">
               Page {query.data.page} of {Math.max(query.data.totalPages, 1)} · {query.data.total}{" "}
-              document{query.data.total === 1 ? "" : "s"}
+              {reportsOnly ? "report" : "document"}
+              {query.data.total === 1 ? "" : "s"}
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
                 className="button-secondary p-2.5"
                 aria-label="Previous page"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={16} className="shrink-0" />
               </button>
               <button
                 className="button-secondary p-2.5"
@@ -216,16 +255,37 @@ export function HistoryView({ reportsOnly = false }: { reportsOnly?: boolean }) 
                 disabled={page >= query.data.totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                <ChevronRight size={18} />
+                <ChevronRight size={16} className="shrink-0" />
               </button>
             </div>
           </div>
         </>
       ) : (
         <div className="mt-8 rounded-2xl border border-dashed border-[#cbd8d3] bg-white/60 p-10 text-center">
-          <FileSearch className="mx-auto text-[#75a496]" />
-          <h2 className="mt-3 font-extrabold">No documents found</h2>
-          <p className="muted mt-1 text-sm">Try different filters or upload a document.</p>
+          <FileSearch className="mx-auto shrink-0 text-[#75a496]" size={32} />
+          <h2 className="mt-3 text-base font-extrabold text-[#162522]">
+            {search
+              ? `No ${reportsOnly ? "reports" : "documents"} matching "${search}"`
+              : `No ${reportsOnly ? "reports" : "documents"} found`}
+          </h2>
+          <p className="muted mt-1 text-sm">
+            {search
+              ? "Check your spelling, try different keywords, or clear the search query."
+              : `Try different filters or upload a ${reportsOnly ? "report" : "document"}.`}
+          </p>
+          {search && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              className="button-secondary mt-5 inline-flex items-center gap-1.5 text-xs font-bold"
+            >
+              <X size={14} className="shrink-0" />
+              <span>Clear search</span>
+            </button>
+          )}
         </div>
       )}
     </div>

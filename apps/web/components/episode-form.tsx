@@ -50,27 +50,34 @@ export function EpisodeForm({
     <div className="mx-auto max-w-2xl">
       <Link
         href="/episodes"
-        className="muted inline-flex items-center gap-2 text-sm font-bold hover:text-emerald-600 mb-6"
+        className="muted mb-6 inline-flex items-center gap-2 text-sm font-semibold transition hover:text-[#176c5b]"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={16} className="shrink-0" />
         Back to episodes
       </Link>
 
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          {existing ? "Edit episode" : "Create new episode"}
-        </h1>
-        <p>Choose your own grouping. A shared date range does not establish a diagnosis.</p>
+      <div className="surface rounded-2xl p-7 sm:p-8">
+        <div className="mb-6 space-y-1">
+          <p className="eyebrow">Care episode</p>
+          <h1 className="page-title mt-1 text-2xl font-extrabold sm:text-3xl">
+            {existing ? "Edit episode" : "Create new episode"}
+          </h1>
+          <p className="muted mt-2 text-sm leading-relaxed">
+            Episodes group related reports (such as an annual checkup or treatment period) so you
+            can track lab trends and generate an AI summary across all tests in that timeframe.
+            Choose your own grouping. A shared date range does not establish a diagnosis.
+          </p>
+        </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             createMutation.mutate();
           }}
-          className="space-y-6"
+          className="space-y-5"
         >
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className="label">
               Episode Title
             </label>
             <input
@@ -80,13 +87,13 @@ export function EpisodeForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Annual Checkup 2026, Post-Surgery Recovery"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="field"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="startDate" className="label">
                 Start Date
               </label>
               <input
@@ -94,11 +101,11 @@ export function EpisodeForm({
                 id="startDate"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="field"
               />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="endDate" className="label">
                 End Date (Optional)
               </label>
               <input
@@ -106,16 +113,13 @@ export function EpisodeForm({
                 id="endDate"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="field"
               />
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
-            <Link
-              href="/episodes"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            >
+          <div className="flex items-center justify-end gap-3 border-t border-[#e2e9e6] pt-5">
+            <Link href="/episodes" className="button-secondary">
               Cancel
             </Link>
             <button
@@ -125,15 +129,19 @@ export function EpisodeForm({
                 !title ||
                 Boolean(startDate && endDate && startDate > endDate)
               }
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
+              className="button-primary inline-flex items-center gap-2"
             >
-              {createMutation.isPending && <LoaderCircle size={16} className="animate-spin" />}
+              {createMutation.isPending && (
+                <LoaderCircle size={16} className="shrink-0 animate-spin" />
+              )}
               {existing ? "Save changes" : "Create episode"}
             </button>
           </div>
 
           {createMutation.isError && (
-            <p className="text-sm text-red-600 mt-2">Failed to create episode. Please try again.</p>
+            <p className="rounded-xl bg-[#f8e4e4] p-3 text-sm text-[#963e42]">
+              Failed to create episode. Please try again.
+            </p>
           )}
         </form>
       </div>
